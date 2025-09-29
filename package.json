@@ -1,0 +1,51 @@
+{
+  "name": "vibecode-db",
+  "version": "0.1.0",
+  "description": "Unified front-end DB API with pluggable adapters (Fake, Supabase, ...).",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./adapters/supabase": {
+      "types": "./dist/adapters/supabase/index.d.ts",
+      "import": "./dist/adapters/supabase/index.mjs",
+      "require": "./dist/adapters/supabase/index.cjs"
+    },
+    "./adapters/fake": {
+      "types": "./dist/adapters/fake/index.d.ts",
+      "import": "./dist/adapters/fake/index.mjs",
+      "require": "./dist/adapters/fake/index.cjs"
+    }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.44.1",
+    "@typescript-eslint/parser": "^8.44.1",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
