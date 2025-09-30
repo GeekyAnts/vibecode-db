@@ -92,6 +92,22 @@ class FakeTable implements AdapterTableRef {
     setRange(from: number, to: number) { this._state.range = { from, to } }
 }
 
+/**
+ * FakeAdapter — zero-backend adapter for instant prototyping and tests.
+ *
+ * Uses `dbSpec.seed` (if provided) as the initial in-memory dataset per table,
+ * validates CRUD payloads against your Zod schema, and returns results without any network calls.
+ *
+ * @public
+ * @example
+ * ```ts
+ * const db = createClient({
+ *   dbSpec: { schema: DBSchema, seed },
+ *   adapter: (spec) => new FakeAdapter(spec)
+ * })
+ * const { data } = await db.from('users').select('*')
+ * ```
+ */
 export class FakeAdapter implements DatabaseAdapter {
     constructor(private dbSpec: DBSpec<any>) { }
 

@@ -112,6 +112,22 @@ class SupabaseTable implements AdapterTableRef {
 
 export type SupabaseAdapterOptions = { url: string; key: string }
 
+/**
+ * SupabaseAdapter — production-ready adapter for Supabase/PostgREST.
+ *
+ * @public
+ * @param dbSpec - Your DBSpec (schema + optional seed/meta). Seed rows are validated and upserted once at startup.
+ * @param opts - Supabase project URL and anon/public key.
+ *
+ * @example
+ * ```ts
+ * const vibecode = createClient({
+ *   dbSpec: { schema: DBSchema },
+ *   adapter: (ctx) => new SupabaseAdapter(ctx, { url: SUPABASE_URL, key: SUPABASE_ANON })
+ * })
+ * const { data } = await vibecode.from('posts').eq('published', true).order('created_at', { ascending: false }).select('*')
+ * ```
+ */
 export class SupabaseAdapter implements DatabaseAdapter {
   private sb: SupabaseClient
   private ready: Promise<void>

@@ -31,6 +31,14 @@ export interface QueryState {
     range?: { from: number; to: number }
 }
 
+/**
+ * Minimal provider interface implemented by each adapter (Fake, Supabase, ...).
+ *
+ * The client calls `from(table)` to obtain a per-table reference that knows how to
+ * build and execute queries for the target backend.
+ *
+
+ */
 export interface DatabaseAdapter {
     from(table: string): AdapterTableRef
 }
@@ -46,7 +54,20 @@ export interface AdapterTableRef {
     setRange(from: number, to: number): void
 }
 
-
+/**
+ * Optional seed rows keyed by table name.
+ * Used by adapters that support local bootstrapping (e.g., Fake) or one-time seeding (e.g., Supabase).
+ *
+ * @public
+ * @typeParam S - Zod raw shape from your DB schema.
+ *
+ * @example
+ * ```ts
+ * const seed: DBSeed<typeof DBSchema.shape> = {
+ *   users: [{ id: 'u1', name: 'Ada', email: 'ada@example.com', created_at: new Date(), updated_at: new Date() }]
+ * }
+ * ```
+ */
 export type DBSeed<S extends z.ZodRawShape> = Partial<
     {
         [K in TablesFromSchema<S>]: Array<z.infer<S[K]>>
