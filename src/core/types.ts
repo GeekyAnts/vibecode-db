@@ -32,7 +32,7 @@ export interface QueryState {
 }
 
 /**
- * Minimal provider interface implemented by each adapter (Fake, Supabase, ...).
+ * Minimal provider interface implemented by each adapter (Runtime, Supabase, ...).
  *
  * The client calls `from(table)` to obtain a per-table reference that knows how to
  * build and execute queries for the target backend.
@@ -56,7 +56,7 @@ export interface AdapterTableRef {
 
 /**
  * Optional seed rows keyed by table name.
- * Used by adapters that support local bootstrapping (e.g., Fake) or one-time seeding (e.g., Supabase).
+ * Used by adapters that support local bootstrapping (e.g., Runtime) or one-time seeding (e.g., Supabase).
  *
  * @public
  * @typeParam S - Zod raw shape from your DB schema.

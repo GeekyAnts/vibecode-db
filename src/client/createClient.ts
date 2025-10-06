@@ -12,7 +12,7 @@ import { QueryBuilder } from './queryBuilder'
  *
  * @example
  * ```ts
- * const db = createClient({ dbSpec, adapter: (ctx) => new FakeAdapter(ctx) })
+ * const db = createClient({ dbSpec, adapter: (ctx) => new RuntimeAdapter(ctx) })
  * const { data, error } = await db.from('users').order('created_at', { ascending: false }).select('*')
  * ```
  */
@@ -33,7 +33,7 @@ export type VibecodeClient<S extends z.ZodRawShape> = {
  * ```ts
  * const vibecode = createClient({
  *   dbSpec: { schema: DBSchema, seed },
- *   adapter: (ctx) => new FakeAdapter(ctx)
+ *   adapter: (ctx) => new RuntimeAdapter(ctx)
  * })
  * const { data } = await vibecode.from('users').order('created_at', { ascending: false }).select('*')
  * ```

@@ -24,7 +24,7 @@ const DEFAULT_DB = {
 
 type SeedShape = Record<string, any[]>
 
-class FakeTable implements AdapterTableRef {
+class RuntimeTable implements AdapterTableRef {
     _state: QueryState = { filters: [] }
     private tableSchema: z.ZodObject<any>
     private rows: any[]
@@ -93,7 +93,7 @@ class FakeTable implements AdapterTableRef {
 }
 
 /**
- * FakeAdapter — zero-backend adapter for instant prototyping and tests.
+ * RuntimeAdapter — zero-backend adapter for instant prototyping and tests.
  *
  * Uses `dbSpec.seed` (if provided) as the initial in-memory dataset per table,
  * validates CRUD payloads against your Zod schema, and returns results without any network calls.
@@ -103,15 +103,15 @@ class FakeTable implements AdapterTableRef {
  * ```ts
  * const db = createClient({
  *   dbSpec: { schema: DBSchema, seed },
- *   adapter: (spec) => new FakeAdapter(spec)
+ *   adapter: (spec) => new RuntimeAdapter(spec)
  * })
  * const { data } = await db.from('users').select('*')
  * ```
  */
-export class FakeAdapter implements DatabaseAdapter {
+export class RuntimeAdapter implements DatabaseAdapter {
     constructor(private dbSpec: DBSpec<any>) { }
 
     from(table: string): AdapterTableRef {
-        return new FakeTable(table, this.dbSpec.schema, this.dbSpec.seed as SeedShape | undefined)
+        return new RuntimeTable(table, this.dbSpec.schema, this.dbSpec.seed as SeedShape | undefined)
     }
 }

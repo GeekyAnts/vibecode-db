@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { createClient } from 'vibecode-db'
-import { FakeAdapter } from 'vibecode-db/adapters/fake'
+import { RuntimeAdapter } from 'vibecode-db/adapters/runtime'
 import { SupabaseAdapter } from 'vibecode-db/adapters/supabase'
 import type { DBSpec } from 'vibecode-db'
 
@@ -15,12 +15,12 @@ export const DBSchema = z.object({
   }),
 })
 
-// 2) Seed (used by FakeAdapter only)
+// 2) Seed (used by RuntimeAdapter only)
 const seed: DBSpec<typeof DBSchema.shape>['seed'] = {
   todos: [
     {
       id: 't1',
-      title: 'Try vibecode-db (FakeAdapter)',
+      title: 'Try vibecode-db (RuntimeAdapter)',
       completed: false,
       created_at: new Date(),
       updated_at: new Date(),
@@ -43,7 +43,7 @@ const dbSpec: DBSpec<typeof DBSchema.shape> = {
 }
 
 // 4) Adapter switch via env
-const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'fake' | 'supabase'
+const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'runtime' | 'supabase'
 
 export const vibecode = createClient({
   dbSpec,
@@ -53,6 +53,6 @@ export const vibecode = createClient({
       const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
       return new SupabaseAdapter(ctx, { url, key })
     }
-    return new FakeAdapter(ctx)
+    return new RuntimeAdapter(ctx)
   },
 })

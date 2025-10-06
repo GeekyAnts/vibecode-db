@@ -5,5 +5,5 @@ export type { DatabaseAdapter } from './core/types'
 export type { DBSpec, DBSeed } from './core/types'
 
 
-export { FakeAdapter } from './adapters/fake'
+export { RuntimeAdapter } from './adapters/runtime'
 export { SupabaseAdapter } from './adapters/supabase'

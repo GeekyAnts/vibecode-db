@@ -1,7 +1,7 @@
 {
   "name": "vibecode-db",
   "version": "0.1.0",
-  "description": "Unified front-end DB API with pluggable adapters (Fake, Supabase, ...).",
+  "description": "Unified front-end DB API with pluggable adapters (Runtime, Supabase, ...).",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.cjs",
@@ -28,10 +28,10 @@
       "import": "./dist/adapters/supabase/index.mjs",
       "require": "./dist/adapters/supabase/index.cjs"
     },
-    "./adapters/fake": {
-      "types": "./dist/adapters/fake/index.d.ts",
-      "import": "./dist/adapters/fake/index.mjs",
-      "require": "./dist/adapters/fake/index.cjs"
+    "./adapters/runtime": {
+      "types": "./dist/adapters/runtime/index.d.ts",
+      "import": "./dist/adapters/runtime/index.mjs",
+      "require": "./dist/adapters/runtime/index.cjs"
     }
   },
   "dependencies": {

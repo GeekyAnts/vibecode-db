@@ -6,7 +6,7 @@ export default defineConfig({
     index: 'src/index.ts',
     // adapter subpaths (must mirror package.json "exports" keys)
     'adapters/supabase/index': 'src/adapters/supabase/index.ts',
-    'adapters/fake/index': 'src/adapters/fake/index.ts'
+    'adapters/runtime/index': 'src/adapters/runtime/index.ts'
   },
   format: ['esm', 'cjs'],
   dts: true,
