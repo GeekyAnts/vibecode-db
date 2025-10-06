@@ -1,6 +1,6 @@
 {
   "name": "vibecode-db",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Unified front-end DB API with pluggable adapters (Runtime, Supabase, ...).",
   "license": "MIT",
   "type": "module",
@@ -16,6 +16,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "exports": {
     ".": {
