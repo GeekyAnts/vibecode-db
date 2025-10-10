@@ -1,58 +1,57 @@
-import { z } from 'zod'
-import { createClient } from 'vibecode-db'
-import { RuntimeAdapter } from 'vibecode-db/adapters/runtime'
-import { SupabaseAdapter } from 'vibecode-db/adapters/supabase'
-import type { DBSpec } from 'vibecode-db'
 
-// 1) Schema (single table for todos)
-export const DBSchema = z.object({
-  todos: z.object({
-    id: z.string(),
-    title: z.string(),
-    completed: z.boolean(),
-    created_at: z.date(),
-    updated_at: z.date(),
-  }),
+import { vibecodeTable, t, references, defineSchema, createClient, RuntimeAdapter, SupabaseAdapter, type DBSpec } from '@vibecode-db/client'
+
+
+export const users = vibecodeTable('users', {
+  id: t.integer(),
+  name: t.varchar(),
+  email: t.varchar(),
 })
 
-// 2) Seed (used by RuntimeAdapter only)
-const seed: DBSpec<typeof DBSchema.shape>['seed'] = {
-  todos: [
-    {
-      id: 't1',
-      title: 'Try vibecode-db (RuntimeAdapter)',
-      completed: false,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-    {
-      id: 't2',
-      title: 'Switch to SupabaseAdapter with one flag',
-      completed: false,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ],
+export const todos = vibecodeTable('todos', {
+  id: t.varchar(), // ok: your DB shows text for todos.id
+  title: t.varchar({ length: 256 }),
+  completed: t.boolean(),
+  created_at: t.timestamp(),
+  updated_at: t.timestamp(),
+  user_id: references(t.integer('user_id'), () => users.id), // FK → users.id
+})
+
+// Assemble (FK type adoption happens here)
+export const db = defineSchema({ users, todos })
+
+export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
+  schema: db.zodBundle,
+  // optional seed for RuntimeAdapter 
+  seed: {
+    users: [
+      { id: 1, name: 'Ada', email: 'ada@example.com' },
+      { id: 2, name: 'Alan', email: 'alan@example.com' },
+    ],
+    todos: [
+      {
+        id: 't1',
+        title: 'Wire the UI',
+        completed: false,
+        user_id: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    ],
+  },
 }
 
-// 3) DBSpec wrapper
-const dbSpec: DBSpec<typeof DBSchema.shape> = {
-  schema: DBSchema,
-  seed,
-  meta: { app: 'todo-example' },
-}
 
-// 4) Adapter switch via env
 const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'runtime' | 'supabase'
 
 export const vibecode = createClient({
   dbSpec,
-  adapter: (ctx) => {
-    if (which === 'supabase') {
-      const url = import.meta.env.VITE_SUPABASE_URL as string
-      const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
-      return new SupabaseAdapter(ctx, { url, key })
-    }
-    return new RuntimeAdapter(ctx)
-  },
+  adapter: (ctx: any) =>
+    which === 'supabase'
+      ? new SupabaseAdapter(ctx, {
+        url: import.meta.env.VITE_SUPABASE_URL as string,
+        key: import.meta.env.VITE_SUPABASE_ANON_KEY as string
+      })
+      : new RuntimeAdapter(ctx),
 })
+

@@ -1,106 +1,243 @@
+// examples/todo-vite/src/App.tsx
 import { useEffect, useMemo, useState } from 'react'
-import { vibecode, DBSchema } from './db/client'
-import { z } from 'zod'
+import { vibecode } from './db/client'
 
-// Types derived from Zod
-type Todo = z.infer<typeof DBSchema.shape.todos>
+type User = {
+  id: string
+  name: string
+  email: string
+}
+
+type Todo = {
+  id: string
+  title: string
+  completed: boolean
+  user_id: string
+  created_at: string | Date
+  updated_at: string | Date
+  // When using Supabase with nested select, we can get:
+  users?: { name: string; email: string }
+}
+
+
+const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'runtime' | 'supabase'
+const useSupabase = which === 'supabase' ? true : false
+
+
+
 
 export default function App() {
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
   const [todos, setTodos] = useState<Todo[]>([])
-  const [title, setTitle] = useState('')
+  const [newTitle, setNewTitle] = useState('')
 
-  const adapter = useMemo(() => import.meta.env.VITE_VIBECODE_ADAPTER, [])
+  const usersById = useMemo(() => {
+    const m = new Map<string, User>()
+    users.forEach(u => m.set(u.id, u))
+    return m
+  }, [users])
 
-  // Fetch on load
+  // Load users once
   useEffect(() => {
     ; (async () => {
-      const res = await vibecode
-        .from('todos')
-        .order('created_at', { ascending: false })
-        .select('*')
-      if (!res.error && res.data) setTodos(res.data as Todo[])
+      const { data, error } = await vibecode.from('users').order('name', { ascending: true }).select('id, name, email')
+      if (error) {
+        console.error('Load users error', error)
+        return
+      }
+      setUsers((data as User[]) ?? [])
+      // if none selected yet, default to first (if you prefer)
+      if (data && data.length && selectedUserId === 'all') setSelectedUserId((data as User[])[0].id)
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Load todos whenever selected user changes
+  useEffect(() => {
+    let isCancelled = false
+
+      ; (async () => {
+        try {
+          // 1) Choose projection once
+          const projection = useSupabase
+            ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
+            : 'id, title, completed, user_id, created_at, updated_at'
+
+          // 2) Build the chain (filters/modifiers first)
+          let qb = vibecode
+            .from('todos')
+            .order('created_at', { ascending: false })
+
+          if (selectedUserId !== 'all') {
+            qb = qb.eq('user_id', selectedUserId)
+          }
+
+          // 3) Execute at the end
+          const { data, error } = await qb.select(projection)
+
+          if (!isCancelled) {
+            if (error) {
+              console.error('Load todos error', error)
+              return
+            }
+            setTodos((data as Todo[]) ?? [])
+          }
+        } catch (e) {
+          if (!isCancelled) console.error(e)
+        }
+      })()
+
+    return () => { isCancelled = true }
+    // If useSupabase can change at runtime, include it below too.
+  }, [selectedUserId /*, useSupabase*/])
+
+
   async function addTodo() {
-    if (!title.trim()) return
+    if (!newTitle.trim()) return
     const now = new Date()
-    const row: Todo = {
+    // Require a user for insertion (multi-user demo)
+    const userId = selectedUserId === 'all' ? users[0]?.id : selectedUserId
+    if (!userId) return
+
+    const payload = {
       id: crypto.randomUUID(),
-      title: title.trim(),
+      title: newTitle.trim(),
       completed: false,
+      user_id: userId,
       created_at: now,
       updated_at: now,
     }
-    const res = await vibecode.from('todos').insert(row)
-    console.log('res', res)
-    if (!res.error) {
-      setTodos((t) => [row, ...t])
-      setTitle('')
+
+    const { error } = await vibecode.from('todos').insert(payload)
+    if (error) {
+      console.error('Insert error', error)
+      return
+    }
+    setNewTitle('')
+    // reload
+    if (selectedUserId !== 'all') {
+      const { data } = await vibecode
+        .from('todos')
+        .eq('user_id', selectedUserId)
+        .order('created_at', { ascending: false })
+        .select(useSupabase ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)' : 'id, title, completed, user_id, created_at, updated_at')
+      setTodos((data as Todo[]) ?? [])
     } else {
-      alert(res.error.message)
+      const { data } = await vibecode
+        .from('todos')
+        .order('created_at', { ascending: false })
+        .select(useSupabase ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)' : 'id, title, completed, user_id, created_at, updated_at')
+      setTodos((data as Todo[]) ?? [])
     }
   }
 
-  async function toggle(todo: Todo) {
-    const res = await vibecode
-      .from('todos')
-      .eq('id', todo.id)
-      .update({ completed: !todo.completed, updated_at: new Date() })
-    if (!res.error) {
-      setTodos((prev) =>
-        prev.map((t) => (t.id === todo.id ? { ...t, completed: !t.completed } : t))
-      )
-    } else {
-      alert(res.error.message)
+  async function toggleTodo(id: string, completed: boolean) {
+    const { error } = await vibecode.from('todos').eq('id', id).update({ completed, updated_at: new Date() })
+    if (error) {
+      console.error('Toggle error', error)
+      return
     }
+    setTodos(prev => prev.map(t => (t.id === id ? { ...t, completed } : t)))
   }
 
-  async function remove(todo: Todo) {
-    const res = await vibecode.from('todos').eq('id', todo.id).delete()
-    if (!res.error) {
-      setTodos((prev) => prev.filter((t) => t.id !== todo.id))
-    } else {
-      alert(res.error.message)
+  async function deleteTodo(id: string) {
+    const { error } = await vibecode.from('todos').eq('id', id).delete()
+    if (error) {
+      console.error('Delete error', error)
+      return
     }
+    setTodos(prev => prev.filter(t => t.id !== id))
   }
 
   return (
-    <div className="app" style={{ maxWidth: 560, margin: '40px auto', fontFamily: 'system-ui' }}>
-      <h1>Vibecode Todo ({adapter})</h1>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto w-full max-w-md px-4 py-10">
+        {/* Title */}
+        <h1 className="mb-1 text-center text-3xl font-semibold tracking-tight">Vibecode Todos</h1>
+        <p className="mb-6 text-center text-xs text-slate-400">
+          {useSupabase ? 'Supabase Adapter' : 'Runtime Adapter'}
+        </p>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <input
-          placeholder="Add a task…"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{ flex: 1, padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8 }}
-        />
-        <button onClick={addTodo} style={{ padding: '10px 12px', borderRadius: 8 }}>
-          Add
-        </button>
-      </div>
-
-      <ul style={{ listStyle: 'none', padding: 0, marginTop: 16 }}>
-        {todos.map((t) => (
-          <li
-            key={t.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '10px 0',
-              borderBottom: '1px solid #eee',
-            }}
+        {/* Controls Card */}
+        <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm">
+          {/* User picker */}
+          <label htmlFor="user" className="mb-2 block text-xs font-medium text-slate-400">
+            User
+          </label>
+          <select
+            id="user"
+            className="mb-4 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value as any)}
           >
-            <input type="checkbox" checked={t.completed} onChange={() => toggle(t)} />
-            <span style={{ flex: 1, textDecoration: t.completed ? 'line-through' : 'none' }}>
-              {t.title}
-            </span>
-            <button onClick={() => remove(t)} style={{ borderRadius: 6 }}>Delete</button>
-          </li>
-        ))}
-      </ul>
+            <option value="all">All users</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name} ({u.email})
+              </option>
+            ))}
+          </select>
+
+          {/* Add todo */}
+          <div className="flex gap-2">
+            <input
+              className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              placeholder="Add a task…"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+            />
+            <button
+              className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+              onClick={addTodo}
+            >
+              Add
+            </button>
+          </div>
+        </section>
+
+        {/* List Card */}
+        <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-2 shadow-sm">
+          <ul className="list-none space-y-2 p-0 m-0">
+            {todos.map((t) => {
+              const owner = t.users?.name ?? usersById.get(t.user_id)?.name ?? 'Unknown'
+              return (
+                <li
+                  key={t.id}
+                  className="grid grid-cols-[auto,1fr,auto] items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-indigo-500"
+                    checked={!!t.completed}
+                    onChange={(e) => toggleTodo(t.id, e.target.checked)}
+                    aria-label="Toggle todo"
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{t.title}</div>
+                    <div className="mt-0.5 text-xs text-slate-400">by {owner}</div>
+                  </div>
+                  <button
+                    className="shrink-0 rounded-md px-2 py-1 text-xs text-red-300 transition hover:bg-red-400/10 hover:text-red-200"
+                    onClick={() => deleteTodo(t.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              )
+            })}
+
+            {!todos.length && (
+              <li className="rounded-lg border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400">
+                No todos yet.
+              </li>
+            )}
+          </ul>
+        </section>
+      </div>
     </div>
   )
+
+
+
 }

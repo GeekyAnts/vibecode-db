@@ -1,5 +1,5 @@
 {
-  "name": " @vibecode-db/client",
+  "name": "@vibecode-db/client",
   "version": "1.0.0",
   "description": "Unified front-end DB API with pluggable adapters (Runtime, Supabase, ...).",
   "license": "MIT",
