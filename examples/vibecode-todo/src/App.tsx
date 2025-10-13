@@ -1,6 +1,7 @@
 // examples/todo-vite/src/App.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { vibecode } from './db/client'
+import './App.css'
 
 type User = {
   id: string
@@ -150,77 +151,154 @@ export default function App() {
     setTodos(prev => prev.filter(t => t.id !== id))
   }
 
+  // return (
+  //   <div className="min-h-screen bg-slate-950 text-slate-100">
+  //     <div className="mx-auto w-full max-w-md px-4 py-10">
+  //       {/* Title */}
+  //       <h1 className="mb-1 text-center text-3xl font-semibold tracking-tight">Vibecode Todos</h1>
+  //       <p className="mb-6 text-center text-xs text-slate-400">
+  //         {useSupabase ? 'Supabase Adapter' : 'Runtime Adapter'}
+  //       </p>
+
+  //       {/* Controls Card */}
+  //       <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm">
+  //         {/* User picker */}
+  //         <label htmlFor="user" className="mb-2 block text-xs font-medium text-slate-400">
+  //           User
+  //         </label>
+  //         <select
+  //           id="user"
+  //           className="mb-4 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+  //           value={selectedUserId}
+  //           onChange={(e) => setSelectedUserId(e.target.value as any)}
+  //         >
+  //           <option value="all">All users</option>
+  //           {users.map((u) => (
+  //             <option key={u.id} value={u.id}>
+  //               {u.name} ({u.email})
+  //             </option>
+  //           ))}
+  //         </select>
+
+  //         {/* Add todo */}
+  //         <div className="flex gap-2">
+  //           <input
+  //             className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+  //             placeholder="Add a task…"
+  //             value={newTitle}
+  //             onChange={(e) => setNewTitle(e.target.value)}
+  //           />
+  //           <button
+  //             className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+  //             onClick={addTodo}
+  //           >
+  //             Add
+  //           </button>
+  //         </div>
+  //       </section>
+
+  //       {/* List Card */}
+  //       <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-2 shadow-sm">
+  //         <ul className="list-none space-y-2 p-0 m-0">
+  //           {todos.map((t) => {
+  //             const owner = t.users?.name ?? usersById.get(t.user_id)?.name ?? 'Unknown'
+  //             return (
+  //               <li
+  //                 key={t.id}
+  //                 className="grid grid-cols-[auto,1fr,auto] items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2"
+  //               >
+  //                 <input
+  //                   type="checkbox"
+  //                   className="h-4 w-4 accent-indigo-500"
+  //                   checked={!!t.completed}
+  //                   onChange={(e) => toggleTodo(t.id, e.target.checked)}
+  //                   aria-label="Toggle todo"
+  //                 />
+  //                 <div className="min-w-0">
+  //                   <div className="truncate text-sm font-medium">{t.title}</div>
+  //                   <div className="mt-0.5 text-xs text-slate-400">by {owner}</div>
+  //                 </div>
+  //                 <button
+  //                   className="shrink-0 rounded-md px-2 py-1 text-xs text-red-300 transition hover:bg-red-400/10 hover:text-red-200"
+  //                   onClick={() => deleteTodo(t.id)}
+  //                 >
+  //                   Delete
+  //                 </button>
+  //               </li>
+  //             )
+  //           })}
+
+  //           {!todos.length && (
+  //             <li className="rounded-lg border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400">
+  //               No todos yet.
+  //             </li>
+  //           )}
+  //         </ul>
+  //       </section>
+  //     </div>
+  //   </div>
+  // )
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto w-full max-w-md px-4 py-10">
-        {/* Title */}
-        <h1 className="mb-1 text-center text-3xl font-semibold tracking-tight">Vibecode Todos</h1>
-        <p className="mb-6 text-center text-xs text-slate-400">
-          {useSupabase ? 'Supabase Adapter' : 'Runtime Adapter'}
-        </p>
+    <div className="vc-root">
+      <div className="vc-container">
+        {/* Header */}
+        <header className="vc-header">
+          <h1 className="vc-title-hero">Vibecode Todos</h1>
+          <span className={`vc-badge ${useSupabase ? 'is-supa' : 'is-runtime'}`}>
+            {useSupabase ? 'Supabase Adapter' : 'Runtime Adapter'}
+          </span>
+        </header>
 
-        {/* Controls Card */}
-        <section className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-sm">
-          {/* User picker */}
-          <label htmlFor="user" className="mb-2 block text-xs font-medium text-slate-400">
-            User
-          </label>
-          <select
-            id="user"
-            className="mb-4 w-full rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value as any)}
-          >
-            <option value="all">All users</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.email})
-              </option>
-            ))}
-          </select>
+        {/* Controls */}
+        <section className="vc-card">
+          <label htmlFor="user" className="vc-label">User</label>
+          <div className="vc-select-wrap">
+            <select
+              id="user"
+              className="vc-select"
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value as any)}
+            >
+              <option value="all">All users</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.email})
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {/* Add todo */}
-          <div className="flex gap-2">
+          <div className="vc-add">
             <input
-              className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 text-sm placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="vc-input"
               placeholder="Add a task…"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
             />
-            <button
-              className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
-              onClick={addTodo}
-            >
-              Add
-            </button>
+            <button className="vc-button" onClick={addTodo}>Add</button>
           </div>
         </section>
 
-        {/* List Card */}
-        <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900/70 p-2 shadow-sm">
-          <ul className="list-none space-y-2 p-0 m-0">
+        {/* List */}
+        <section className="vc-card">
+          <ul className="vc-list">
             {todos.map((t) => {
               const owner = t.users?.name ?? usersById.get(t.user_id)?.name ?? 'Unknown'
               return (
-                <li
-                  key={t.id}
-                  className="grid grid-cols-[auto,1fr,auto] items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-2"
-                >
+                <li key={t.id} className="vc-row">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 accent-indigo-500"
+                    className="vc-checkbox"
                     checked={!!t.completed}
                     onChange={(e) => toggleTodo(t.id, e.target.checked)}
                     aria-label="Toggle todo"
                   />
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{t.title}</div>
-                    <div className="mt-0.5 text-xs text-slate-400">by {owner}</div>
+                  <div className="vc-row-text">
+                    <div className="vc-row-title" title={t.title}>{t.title}</div>
+                    <div className="vc-row-meta">by {owner}</div>
                   </div>
-                  <button
-                    className="shrink-0 rounded-md px-2 py-1 text-xs text-red-300 transition hover:bg-red-400/10 hover:text-red-200"
-                    onClick={() => deleteTodo(t.id)}
-                  >
+                  <button className="vc-link vc-delete" onClick={() => deleteTodo(t.id)}>
                     Delete
                   </button>
                 </li>
@@ -228,16 +306,13 @@ export default function App() {
             })}
 
             {!todos.length && (
-              <li className="rounded-lg border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400">
-                No todos yet.
-              </li>
+              <li className="vc-empty">No todos yet.</li>
             )}
           </ul>
         </section>
       </div>
     </div>
   )
-
 
 
 }

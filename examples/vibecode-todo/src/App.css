@@ -1,42 +1,284 @@
+/* ===== Base & Theme ===== */
+:root {
+  --bg: #0b1220;
+  --panel: #0f172a;
+  --panel-soft: #111a2f;
+  --border: #1f2a44;
+  --text: #e5e7eb;
+  --text-dim: #9aa4b2;
+  --accent: #6366f1;
+  --accent-strong: #4f46e5;
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --radius: 12px;
+  --shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* ===== Layout ===== */
+.vc-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 56px 16px;
+}
+
+.vc-container {
+  width: 100%;
+  max-width: 680px;
+  display: grid;
+  gap: 20px;
+}
+
+/* ===== Header ===== */
+.vc-header {
   text-align: center;
+  display: grid;
+  gap: 8px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.vc-title-hero {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.vc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.vc-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  display: inline-block;
+}
+
+.vc-badge.is-runtime::before {
+  background: #22c55e;
+}
+
+/* green dot */
+.vc-badge.is-supa::before {
+  background: #10b981;
+}
+
+/* teal  */
+
+/* ===== Cards ===== */
+.vc-card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-soft) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+/* ===== Form controls ===== */
+.vc-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.vc-select-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.vc-select {
+  width: 100%;
+  appearance: none;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 32px 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border 120ms ease, box-shadow 120ms ease;
+}
+
+.vc-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* Chevron */
+.vc-select-wrap::after {
+  content: "▾";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--text-dim);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.vc-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.vc-input {
+  min-width: 0;
+  width: 100%;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border 120ms ease, box-shadow 120ms ease;
+}
+
+.vc-input::placeholder {
+  color: var(--text-dim);
+}
+
+.vc-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.vc-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 80ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.vc-button:hover {
+  filter: brightness(1.05);
+}
+
+.vc-button:active {
+  transform: translateY(1px);
+}
+
+/* ===== List ===== */
+.vc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.vc-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.vc-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.vc-row-text {
+  min-width: 0;
+  /* allows ellipsis to work */
+  display: grid;
+  gap: 4px;
+}
+
+.vc-row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vc-row-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.vc-link {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--danger);
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.vc-link:hover {
+  background: var(--danger-soft);
+}
+
+.vc-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ===== Small screens ===== */
+@media (max-width: 420px) {
+  .vc-container {
+    gap: 16px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .vc-title-hero {
+    font-size: 24px;
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  .vc-row {
+    grid-template-columns: 18px 1fr auto;
   }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
