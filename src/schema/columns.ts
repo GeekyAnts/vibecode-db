@@ -5,7 +5,7 @@ function make(kind: ColumnKind, extras?: Partial<ColumnDescriptor>): ColumnDescr
     return { kind, ...extras }
 }
 
-export const t = {
+export const col = {
     integer(name?: string) { return make('integer', { name }) },
     varchar(opts?: { length?: number }, name?: string) { return make('varchar', { name, length: opts?.length }) },
     boolean(name?: string) { return make('boolean', { name }) },

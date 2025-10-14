@@ -45,9 +45,10 @@ export function createClient<S extends z.ZodRawShape>(opts: CreateClientOptions<
   const adapter: DatabaseAdapter = opts.adapter(opts.dbSpec)
 
   return {
-    from(table) {
+    from<TName extends TablesFromSchema<S>>(table: TName) {
       const ref = adapter.from(table as string)  // adapter hook
-      return new QueryBuilder<S, typeof table>(table, ref) // creates fluent API wrapper
+      const tableSchema = (opts.dbSpec.schema.shape as any)[table] as z.ZodObject<any>
+      return new QueryBuilder<S, TName>(table, ref, tableSchema)
     }
   }
 }

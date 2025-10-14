@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import type {
-    AdapterTableRef,
+    AdapterTableExecutor,
     DatabaseAdapter,
     FilterOp,
     OrderSpec,
@@ -24,7 +24,7 @@ const DEFAULT_DB = {
 
 type SeedShape = Record<string, any[]>
 
-class RuntimeTable implements AdapterTableRef {
+class RuntimeTable implements AdapterTableExecutor {
     _state: QueryState = { filters: [] }
     private tableSchema: z.ZodObject<any>
     private rows: any[]
@@ -111,7 +111,7 @@ class RuntimeTable implements AdapterTableRef {
 export class RuntimeAdapter implements DatabaseAdapter {
     constructor(private dbSpec: DBSpec<any>) { }
 
-    from(table: string): AdapterTableRef {
+    from(table: string): AdapterTableExecutor {
         return new RuntimeTable(table, this.dbSpec.schema, this.dbSpec.seed as SeedShape | undefined)
     }
 }

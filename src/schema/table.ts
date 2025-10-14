@@ -13,7 +13,6 @@ export function vibecodeTable<TCols extends ColumnsShape>(tableName: string, col
     // Create a proxy-like obj  ect exposing column refs as properties
     const handle: any = { ...def }
 
-    console.log('[DSL] VibecodeTable:', name, handle)
     for (const key of Object.keys(columns)) {
         const colName = columns[key].name ?? key
         Object.defineProperty(handle, key, {

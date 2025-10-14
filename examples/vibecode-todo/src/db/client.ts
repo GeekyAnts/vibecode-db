@@ -1,28 +1,26 @@
 
-import { vibecodeTable, t, references, defineSchema, createClient, RuntimeAdapter, SupabaseAdapter, type DBSpec } from '@vibecode-db/client'
+import { vibecodeTable, col, references, defineSchema, createClient, RuntimeAdapter, SupabaseAdapter, type DBSpec } from '@vibecode-db/client'
 
 
 export const users = vibecodeTable('users', {
-  id: t.integer(),
-  name: t.varchar(),
-  email: t.varchar(),
+  id: col.integer(),
+  name: col.varchar(),
+  email: col.varchar(),
 })
 
 export const todos = vibecodeTable('todos', {
-  id: t.varchar(), // ok: your DB shows text for todos.id
-  title: t.varchar({ length: 256 }),
-  completed: t.boolean(),
-  created_at: t.timestamp(),
-  updated_at: t.timestamp(),
-  user_id: references(t.integer('user_id'), () => users.id), // FK → users.id
+  id: col.varchar(), 
+  title: col.varchar({ length: 256 }),
+  completed: col.boolean(),
+  created_at: col.timestamp(),
+  updated_at: col.timestamp(),
+  user_id: references(col.integer('user_id'), () => users.id), 
 })
 
-// Assemble (FK type adoption happens here)
 export const db = defineSchema({ users, todos })
 
 export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
   schema: db.zodBundle,
-  // optional seed for RuntimeAdapter 
   seed: {
     users: [
       { id: 1, name: 'Ada', email: 'ada@example.com' },

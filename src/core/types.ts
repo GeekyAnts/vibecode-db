@@ -40,18 +40,14 @@ export interface QueryState {
 
  */
 export interface DatabaseAdapter {
-    from(table: string): AdapterTableRef
+    from(table: string): AdapterTableExecutor
 }
 
-export interface AdapterTableRef {
+export interface AdapterTableExecutor {
     select(select: string | undefined, state: QueryState): SelectResult<any>
     insert(values: any | any[]): MutateResult<any>
     update(patch: Record<string, unknown>, state: QueryState): MutateResult<any>
     delete(state: QueryState): MutateResult<any>
-    order(by: OrderSpec): void
-    where(op: FilterOp): void
-    setLimit(n: number): void
-    setRange(from: number, to: number): void
 }
 
 /**
@@ -85,7 +81,7 @@ export type DBSpec<S extends z.ZodRawShape> = {
 
 /**
  * Adapter factory MUST be a callback that receives DBSpec (not an instance).
- * (We keep DatabaseAdapter/AdapterTableRef contracts as-is.)
+ * (We keep DatabaseAdapter/AdapterTableExecutor contracts as-is.)
  */
 export type AdapterFactory<S extends z.ZodRawShape> = (dbSpec: DBSpec<S>) => DatabaseAdapter
 
