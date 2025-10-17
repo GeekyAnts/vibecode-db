@@ -17,7 +17,7 @@ export function vibecodeTable<TCols extends ColumnsShape>(tableName: string, col
         const colName = columns[key].name ?? key
         Object.defineProperty(handle, key, {
             enumerable: true,
-            get: (): ColumnRef => ({ __brand: 'ColumnRef', table: tableName, column: String(colName) }),
+            get: (): ColumnRef => ({ table: tableName, column: String(colName) }),
         })
     }
     return handle as TableHandle<TCols>

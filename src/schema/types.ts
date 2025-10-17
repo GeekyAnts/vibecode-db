@@ -1,3 +1,4 @@
+import { RelationIndex } from 'src/core/types'
 import { z } from 'zod'
 
 export type ColumnKind =
@@ -10,7 +11,6 @@ export type ColumnKind =
     | 'enum'
 
 export type ColumnRef = {
-    __brand: 'ColumnRef'
     table: string
     column: string
 }
@@ -32,7 +32,6 @@ export interface TableDef {
     columns: ColumnsShape
 }
 
-/** What defineSchema returns now (minimal) */
 export interface DefinedSchema {
     /** Per-table Zod objects */
     tableZods: Record<string, z.ZodObject<any>>
@@ -40,4 +39,6 @@ export interface DefinedSchema {
     zodBundle: z.ZodObject<Record<string, z.ZodObject<any>>>
     /** Original table defs (to enable future growth) */
     tables: TableDef[]
+    /** Relation index: localTable -> childTableName -> relation */
+    relations: RelationIndex
 }

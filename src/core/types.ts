@@ -24,11 +24,32 @@ export type FilterOp =
     | { type: 'in'; column: string; value: unknown[] }
     | { type: 'like'; column: string; value: string }
 
+/** One-level projection tree: columns + nested children by table name. */
+export type ProjectionNode = {
+    columns: string[] | ['*']
+    children: Record<string, ProjectionNode> // tableName -> nested projection
+}
+
+/** Optional relationship hint when compiling joins (one level for v0.1). */
+export type Relation = {
+    // many-to-one: localTable.localKey -> remoteTable.remoteKey
+    kind: 'many-to-one'
+    localTable: string
+    localKey: string
+    remoteTable: string
+    remoteKey: string
+}
+
+/** Relation index: localTable -> childTableName -> relation */
+export type RelationIndex = Record<string, Record<string, Relation>>
+
 export interface QueryState {
     filters: FilterOp[]
     order?: OrderSpec
     limit?: number
     range?: { from: number; to: number }
+    projectionAst?: ProjectionNode
+    rawProjection?: string
 }
 
 /**
@@ -70,12 +91,15 @@ export type DBSeed<S extends z.ZodRawShape> = Partial<
     }
 >
 
+
+
 /*
 DBSpec carries today’s schema + seed data, and leaves room for future meta without another breaking change.
 */
 export type DBSpec<S extends z.ZodRawShape> = {
     schema: z.ZodObject<S>
     seed?: DBSeed<S>
+    relations?: RelationIndex
     meta?: Record<string, unknown>
 }
 

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ColumnDescriptor, ColumnKind, ColumnRef, DefinedSchema, TableDef } from './types'
+import { RelationIndex } from 'src/core/types'
 
 /** Base Zod type by kind */
 function kindToZod(kind: ColumnKind, enumValues?: readonly string[], length?: number): z.ZodTypeAny {
@@ -17,49 +18,101 @@ function kindToZod(kind: ColumnKind, enumValues?: readonly string[], length?: nu
     }
 }
 
-/** Resolve FK target; throws if not found */
-function resolveTarget(tables: TableDef[], ref: ColumnRef): { target: ColumnDescriptor } {
-    const t = tables.find(tt => tt.tableName === ref.table)
-    if (!t) throw new Error(`FK target table "${ref.table}" not found`)
-    const colEntry = Object.entries(t.columns).find(([key, desc]) => (desc.name ?? key) === ref.column)
-    if (!colEntry) throw new Error(`FK target column "${ref.table}.${ref.column}" not found`)
-    const [, target] = colEntry
-    return { target }
+/**
+ * Resolve a foreign key target (table+column) from a ColumnRef.
+ *
+ * Returns the target table, the internal column key, the exposed column name,
+ * and the full ColumnDescriptor so callers can adopt type info and register relations.
+ */
+export function resolveTarget(
+    tables: Record<string, TableDef> | TableDef[],
+    ref: ColumnRef
+): {
+    targetTable: TableDef
+    targetKey: string                // internal key in `columns`
+    targetExposedName: string        // (desc.name ?? key)
+    target: ColumnDescriptor
+} {
+    // Normalize to a fast lookup map
+    const byName: Record<string, TableDef> = Array.isArray(tables)
+        ? Object.fromEntries(tables.map(t => [t.tableName, t]))
+        : tables
+
+    const targetTable = byName[ref.table]
+    if (!targetTable) {
+        throw new Error(`FK target table "${ref.table}" not found`)
+    }
+
+    let targetKey: string | undefined
+    let target: ColumnDescriptor | undefined
+    for (const [key, desc] of Object.entries(targetTable.columns)) {
+        const exposed = desc.name ?? key
+        if (exposed === ref.column) {
+            targetKey = key
+            target = desc
+            break
+        }
+    }
+
+    if (!target || !targetKey) {
+        throw new Error(`FK target column "${ref.table}.${ref.column}" not found`)
+    }
+
+    const targetExposedName = target.name ?? targetKey
+    return { targetTable, targetKey, targetExposedName, target }
 }
 
 /**
- * defineSchema:
- *  - builds per-table Zod objects
- *  - if a column has .references(() => otherTable.col), it adopts the Z    od type
- *    of the target column (FK type = target type)
+ * Build per-table Zod schemas, adopt FK target types, and collect relations (many-to-one).
  */
 export function defineSchema(tablesRecord: Record<string, TableDef>): DefinedSchema {
-    const tables: TableDef[] = Object.values(tablesRecord)
-    console.log('[DSL] Tables:', tables)
+    // Use the provided record directly as our O(1) lookup map.
+    const tablesByName = tablesRecord
+    const tables: TableDef[] = Object.values(tablesByName)
+  
     const tableZods: Record<string, z.ZodObject<any>> = {}
+    const relations: RelationIndex = {}
+  
     for (const table of tables) {
-        const shape: Record<string, z.ZodTypeAny> = {}
-
-        for (const [key, col] of Object.entries(table.columns)) {
-            const exposedName = col.name ?? key
-
-            // If FK: override kind using the target column's kind
-            if (col.references) {
-                const { target } = resolveTarget(tables, col.references())
-
-                const targetKind = target.kind
-                shape[exposedName] = kindToZod(targetKind, target.enumValues, target.length)
-            } else {
-                // Regular column: use its own kind
-                shape[exposedName] = kindToZod(col.kind, col.enumValues, col.length)
-            }
+      const shape: Record<string, z.ZodTypeAny> = {}
+      // Ensure relations bucket for this table
+      relations[table.tableName] = relations[table.tableName] ?? {}
+  
+      for (const [internalKey, col] of Object.entries(table.columns)) {
+        const exposedName = col.name ?? internalKey
+  
+        if (col.references) {
+          // Resolve FK target and adopt its type
+          const { targetTable, targetExposedName, target } = resolveTarget(
+            tablesByName,
+            col.references()
+          )
+          shape[exposedName] = kindToZod(target.kind, target.enumValues, target.length)
+  
+          // Record a many-to-one hint (localTable.localKey -> remoteTable.remoteKey)
+          // If multiple FKs to the same remote table exist, last write wins (v1 constraint).
+          relations[table.tableName][targetTable.tableName] = {
+            kind: 'many-to-one',
+            localTable: table.tableName,
+            localKey: exposedName,
+            remoteTable: targetTable.tableName,
+            remoteKey: targetExposedName,
+          }
+        } else {
+          // Regular column → own kind
+          shape[exposedName] = kindToZod(col.kind, col.enumValues, col.length)
         }
-
-        tableZods[table.tableName] = z.object(shape)
+      }
+  
+      tableZods[table.tableName] = z.object(shape)
     }
-
-
+  
     const zodBundle = z.object(tableZods)
-
-    return { tableZods, zodBundle, tables }
-}
+  
+    return {
+      tableZods,
+      zodBundle,
+      tables,
+      relations,
+    }
+  }

@@ -9,6 +9,7 @@ import type {
   RowFromSchema,
   QueryState,
 } from '../core/types'
+import { parseProjection } from 'src/core/projectionUtil'
 
 export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchema<S>> {
   private _state: QueryState = { filters: [] }
@@ -46,6 +47,15 @@ export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchem
 
   select<T = RowFromSchema<S, TName>>(select?: string): SelectResult<T[]> {
     this.ensureValidFilters()
+
+    if (!select) throw new Error('Projection is required')
+
+    const projAst = parseProjection(select)
+    if (!projAst) throw new Error('Invalid projection')
+
+    this._state.projectionAst = projAst
+    this._state.rawProjection = select
+
     const out = this.exec.select(select, this._state)
     this.reset()
     return out

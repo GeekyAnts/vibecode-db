@@ -12,7 +12,8 @@
   "dependencies": {
     "@vibecode-db/client": "file:../../vibecode-db-client-1.0.0.tgz",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "sql.js": "^1.13.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
