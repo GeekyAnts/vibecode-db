@@ -111,6 +111,5 @@ export function buildSelect({ table, state, relations }: BuildSelectInput): Buil
         (joins.length ? ` ${joins.join(' ')}` : '') +
         (where.whereSql ? ` ${where.whereSql}` : '') +
         (orderLimit ? ` ${orderLimit}` : '')
-
     return { sql: sql.trim(), params: where.whereParams, aliasToPath }
 }

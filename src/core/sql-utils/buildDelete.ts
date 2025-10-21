@@ -3,6 +3,6 @@ export function buildDelete(
     whereSql: string,
     whereParams: any[]
 ) {
-    const sql = `DELETE FROM "${table}"${whereSql ? ` WHERE ${whereSql}` : ''}`
+    const sql = `DELETE FROM "${table}"${whereSql ? ` ${whereSql}` : ''}`
     return { sql, params: whereParams }
 }

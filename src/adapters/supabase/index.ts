@@ -125,7 +125,6 @@ export class SupabaseAdapter implements DatabaseAdapter {
   private async seedIfAny(): Promise<void> {
     const seed = this.dbSpec.seed
     if (!seed) return
-    console.log('[DSL] Seeding Supabase:', seed)
     // Iterate seed tables deterministically
     for (const table of Object.keys(seed)) {
       const rows = (seed as Record<string, any[]>)[table]

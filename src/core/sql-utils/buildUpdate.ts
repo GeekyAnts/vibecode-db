@@ -11,7 +11,7 @@ export function buildUpdate(
     if (!keys.length) throw new Error('UPDATE: empty patch')
 
     const setClause = keys.map(c => `"${c}" = ?`).join(', ')
-    const sql = `UPDATE "${table}" SET ${setClause}${whereSql ? ` WHERE ${whereSql}` : ''}`
+    const sql = `UPDATE "${table}" SET ${setClause}${whereSql ? ` ${whereSql}` : ''}`
     const params = keys.map(k => enc[k]).concat(whereParams)
     return { sql, params }
 }

@@ -81,4 +81,3 @@ export function parseProjection(input?: string): ProjectionNode | undefined {
 }
 
 
-console.log(parseProjection('users(name,email), comments(id, content)'))

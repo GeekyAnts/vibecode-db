@@ -4,6 +4,7 @@ import { buildUpdate } from '../../core/sql-utils/buildUpdate'
 import { buildDelete } from '../../core/sql-utils/buildDelete'
 import { buildInsert } from '../../core/sql-utils/buildInsert'
 import { buildSelect } from '../../core/sql-utils/buildSelect'
+import { hydrateToNested } from 'src/core/sql-utils/common'
 
 export class SQLiteTableExecutor implements AdapterTableExecutor {
     constructor(
@@ -15,15 +16,27 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
 
     private async ensureReady() { if (this.ready) await this.ready }
 
+
+
     async select(select: string | undefined, state: QueryState) {
         await this.ensureReady()
-        const { sql, params } = buildSelect({ table: this.table, state, relations: this.relations })
+        // Build SQL + alias map (JOINs handled if relations present)
+        const { sql, params, aliasToPath } = buildSelect({
+            table: this.table,
+            state: state,                 // must include projectionAst parsed from select string
+            relations: this.relations // provided from defineSchema
+        })
+
+
         const stmt = this.getDb().prepare(sql)
         stmt.bind(params)
         const rows: any[] = []
         while (stmt.step()) rows.push(stmt.getAsObject())
         stmt.free()
-        return { data: rows, error: null }
+
+        // 🔁 Normalize shape to match Supabase nested payloads
+        const data = hydrateToNested(rows, aliasToPath, this.table)
+        return { data, error: null }
     }
 
     async insert(values: any) {

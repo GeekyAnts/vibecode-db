@@ -4,7 +4,7 @@ import { vibecode } from './db/client'
 import './App.css'
 
 type User = {
-  id: string
+  id: number
   name: string
   email: string
 }
@@ -13,10 +13,9 @@ type Todo = {
   id: string
   title: string
   completed: boolean
-  user_id: string
+  user_id: number
   created_at: string | Date
   updated_at: string | Date
-  // When using Supabase with nested select, we can get:
   users?: { name: string; email: string }
 }
 
@@ -29,12 +28,13 @@ const useSupabase = which === 'supabase' ? true : false
 
 export default function App() {
   const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState<string | 'all'>('all')
+  const [selectedUserId, setSelectedUserId] = useState<number>(-1)
   const [todos, setTodos] = useState<Todo[]>([])
   const [newTitle, setNewTitle] = useState('')
 
+
   const usersById = useMemo(() => {
-    const m = new Map<string, User>()
+    const m = new Map<number, User>()
     users.forEach(u => m.set(u.id, u))
     return m
   }, [users])
@@ -43,13 +43,14 @@ export default function App() {
   useEffect(() => {
     ; (async () => {
       const { data, error } = await vibecode.from('users').order('name', { ascending: true }).select('id, name, email')
+
       if (error) {
         console.error('Load users error', error)
         return
       }
       setUsers((data as User[]) ?? [])
       // if none selected yet, default to first (if you prefer)
-      if (data && data.length && selectedUserId === 'all') setSelectedUserId((data as User[])[0].id)
+      if (data && data.length && selectedUserId === -1) setSelectedUserId((data as User[])[0].id)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -61,21 +62,21 @@ export default function App() {
       ; (async () => {
         try {
           // 1) Choose projection once
-          const projection = useSupabase
-            ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
-            : 'id, title, completed, user_id, created_at, updated_at'
+          const projection = 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
+
 
           // 2) Build the chain (filters/modifiers first)
           let qb = vibecode
             .from('todos')
             .order('created_at', { ascending: false })
 
-          if (selectedUserId !== 'all') {
+          if (selectedUserId !== -1) {
             qb = qb.eq('user_id', selectedUserId)
           }
 
           // 3) Execute at the end
           const { data, error } = await qb.select(projection)
+          console.log("data 1", data)
 
           if (!isCancelled) {
             if (error) {
@@ -98,7 +99,7 @@ export default function App() {
     if (!newTitle.trim()) return
     const now = new Date()
     // Require a user for insertion (multi-user demo)
-    const userId = selectedUserId === 'all' ? users[0]?.id : selectedUserId
+    const userId = selectedUserId === -1 ? users[0]?.id : selectedUserId
     if (!userId) return
 
     const payload = {
@@ -110,26 +111,29 @@ export default function App() {
       updated_at: now,
     }
 
-    const { error } = await vibecode.from('todos').insert(payload)
-    if (error) {
-      console.error('Insert error', error)
-      return
-    }
+    const data = await vibecode.from('todos').insert(payload)
+    console.log("data 2", data)
+    // if (error) {
+    //   console.error('Insert error', error)
+    //   return
+    // }
     setNewTitle('')
     // reload
-    if (selectedUserId !== 'all') {
+    if (selectedUserId !== -1) {
       const { data } = await vibecode
         .from('todos')
         .eq('user_id', selectedUserId)
         .order('created_at', { ascending: false })
-        .select(useSupabase ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)' : 'id, title, completed, user_id, created_at, updated_at')
+        .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
       setTodos((data as Todo[]) ?? [])
+      console.log("data 3", data)
     } else {
       const { data } = await vibecode
         .from('todos')
         .order('created_at', { ascending: false })
-        .select(useSupabase ? 'id, title, completed, user_id, created_at, updated_at, users(name, email)' : 'id, title, completed, user_id, created_at, updated_at')
+        .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
       setTodos((data as Todo[]) ?? [])
+      console.log("data 4", data)
     }
   }
 
@@ -158,7 +162,7 @@ export default function App() {
         <header className="vc-header">
           <h1 className="vc-title-hero">Vibecode Todos</h1>
           <span className={`vc-badge ${useSupabase ? 'is-supa' : 'is-runtime'}`}>
-            {useSupabase ? 'Supabase Adapter' : 'Runtime Adapter'}
+            {useSupabase ? 'Supabase Adapter' : 'SQLite Adapter'}
           </span>
         </header>
 
@@ -170,7 +174,7 @@ export default function App() {
               id="user"
               className="vc-select"
               value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value as any)}
+              onChange={(e) => { setSelectedUserId(Number(e.target.value)) }}
             >
               <option value="all">All users</option>
               {users.map((u) => (

@@ -21,6 +21,7 @@ export const db = defineSchema({ users, todos })
 
 export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
   schema: db.zodBundle,
+  relations: db.relations,
   seed: {
     users: [
       { id: 1, name: 'Ada', email: 'ada@example.com' },
@@ -105,4 +106,5 @@ export const vibecode = createClient({
 //       })
 //       : new RuntimeAdapter(ctx),
 // })
+
 

@@ -31,6 +31,6 @@ export function buildWhere(state: QueryState, baseAlias?: string) {
         }
     }
 
-    const whereSql = parts.length ? parts.join(' AND ') : ''
+    const whereSql = (parts.length ? "WHERE " + parts.join(' AND ') : '')
     return { whereSql, whereParams: params }
 }
