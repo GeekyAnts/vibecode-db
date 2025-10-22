@@ -5,11 +5,12 @@ import { buildDelete } from '../../core/sql-utils/buildDelete'
 import { buildInsert } from '../../core/sql-utils/buildInsert'
 import { buildSelect } from '../../core/sql-utils/buildSelect'
 import { hydrateToNested } from 'src/core/sql-utils/common'
+import { SqlDriver } from './driver'
 
 export class SQLiteTableExecutor implements AdapterTableExecutor {
     constructor(
         private table: string,
-        private getDb: () => any,
+        private getDriver: () => SqlDriver,
         private relations?: RelationIndex,
         private ready?: Promise<void>
     ) { }
@@ -26,13 +27,8 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
             state: state,                 // must include projectionAst parsed from select string
             relations: this.relations // provided from defineSchema
         })
+        const rows = await this.getDriver().all<any>(sql, params)
 
-
-        const stmt = this.getDb().prepare(sql)
-        stmt.bind(params)
-        const rows: any[] = []
-        while (stmt.step()) rows.push(stmt.getAsObject())
-        stmt.free()
 
         // 🔁 Normalize shape to match Supabase nested payloads
         const data = hydrateToNested(rows, aliasToPath, this.table)
@@ -43,7 +39,7 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
         await this.ensureReady()
         const rows = Array.isArray(values) ? values : [values]
         const { sql, params } = buildInsert(this.table, rows)
-        this.getDb().run(sql, params)
+        await this.getDriver().run(sql, params)
         // Return what we inserted (sql.js has no RETURNING)
         return { data: Array.isArray(values) ? rows : rows[0], error: null }
     }
@@ -52,15 +48,12 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
         await this.ensureReady()
         const { whereSql, whereParams } = buildWhere(state) // no alias for UPDATE
         const { sql, params } = buildUpdate(this.table, patch as any, whereSql, whereParams)
-        this.getDb().run(sql, params)
+        await this.getDriver().run(sql, params)
 
         // Re-select updated rows using the same state (projection/filters/ordering)
         const sel = buildSelect({ table: this.table, state, relations: this.relations })
-        const stmt = this.getDb().prepare(sel.sql)
-        stmt.bind(sel.params)
-        const rows: any[] = []
-        while (stmt.step()) rows.push(stmt.getAsObject())
-        stmt.free()
+        const rows = await this.getDriver().all<any>(sel.sql, sel.params)
+
         return { data: rows, error: null }
     }
 
@@ -68,7 +61,7 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
         await this.ensureReady()
         const { whereSql, whereParams } = buildWhere(state)
         const { sql, params } = buildDelete(this.table, whereSql, whereParams)
-        this.getDb().run(sql, params)
+        await this.getDriver().run(sql, params)
         return { data: null, error: null }
     }
 }

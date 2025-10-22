@@ -1,5 +1,5 @@
 
-import { vibecodeTable, col, references, defineSchema, createClient, RuntimeAdapter, SupabaseAdapter, type DBSpec, type SQLiteWasmAdapterOptions, SQLiteWasmAdapter } from '@vibecode-db/client'
+import { vibecodeTable, col, references, defineSchema, createClient, SupabaseAdapter, type DBSpec, SQLiteAdapter, type SQLiteAdapterOptions } from '@vibecode-db/client'
 
 
 export const users = vibecodeTable('users', {
@@ -68,8 +68,9 @@ const migrations: string[] = [
 ]
 
 // Shared options for SQLite WASM
-const sqliteOpts: SQLiteWasmAdapterOptions = {
-  wasmUrl: '/sql-wasm.wasm',  // served from /public
+const sqliteOpts: SQLiteAdapterOptions = {
+  platform: 'web',
+  wasm: { wasmUrl: '/sql-wasm.wasm' },  // served from /public
   migrations,
   enableForeignKeys: true,
   seedBehavior: 'upsert',     // upsert seeds on first load
@@ -86,7 +87,7 @@ export const vibecode = createClient({
       })
     } else {
       // SQLite (browser) — sql.js in-memory
-      const adapter = new SQLiteWasmAdapter(ctx, sqliteOpts)
+      const adapter = new SQLiteAdapter(ctx, sqliteOpts)
 
       // (Optional) expose for quick dev/debug:
       // @ts-expect-error dev-only

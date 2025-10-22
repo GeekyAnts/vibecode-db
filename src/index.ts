@@ -9,8 +9,8 @@ export { vibecodeTable, col, references, defineSchema } from './schema'
 
 export { RuntimeAdapter } from './adapters/runtime'
 export { SupabaseAdapter } from './adapters/supabase'
-export { SQLiteWasmAdapter } from './adapters/sqliteWasm'
-export type { SQLiteWasmAdapterOptions } from './adapters/sqliteWasm/types'
+export { SQLiteAdapter } from './adapters/sqlite'
+export type { SQLiteAdapterOptions } from 'src/adapters/sqlite/types'
 
 export { parseProjection } from './core/projectionUtil'
 export { buildWhere } from './core/sql-utils/buildWhere'
