@@ -7,15 +7,14 @@ import { BaseSQLiteAdapterOptions } from './types'
 
 export abstract class BaseSQLiteAdapter implements DatabaseAdapter {
     protected driver!: SqlDriver
-    private ready: Promise<void>
+    protected ready!: Promise<void>
 
     constructor(protected dbSpec: DBSpec<any>, protected opts: BaseSQLiteAdapterOptions) {
-        this.ready = this.init()
     }
 
     protected abstract initDriver(): Promise<SqlDriver>
 
-    private async init() {
+    protected async init() {
         this.driver = await this.initDriver()
         await applyPragmasAndMigrations(this.driver, {
             enableForeignKeys: this.opts.enableForeignKeys,

@@ -3,18 +3,19 @@ import type { SqlDriver } from '@vibecode-db/sqlite-core'
 import type { DBSpec } from '@vibecode-db/client'
 import { BaseSQLiteAdapterOptions } from '@vibecode-db/sqlite-core'
 import { SQLExpoDriver } from './sqlexpo-driver'
+import * as SQLite from 'expo-sqlite'
+
 // typed import to satisfy TS, but use dynamic import at runtime
-type ExpoSQLite = typeof import('expo-sqlite')
 
-export type SQLiteExpoOptions = BaseSQLiteAdapterOptions & {
-    dbName?: string
-
+export type SQLiteExpoAdapterOptions = BaseSQLiteAdapterOptions & {
+    dbName: string
 }
 
-export class SQLiteAdapter extends BaseSQLiteAdapter {
-    constructor(dbSpec: DBSpec<any>, private expoOpts: SQLiteExpoOptions = {}) {
+export class SQLiteExpoAdapter extends BaseSQLiteAdapter {
+    constructor(dbSpec: DBSpec<any>, private expoOpts: SQLiteExpoAdapterOptions) {
         super(dbSpec, expoOpts)
         this.validateOpts()
+        this.ready = this.init()
     }
     private validateOpts() {
         if (!this.expoOpts.dbName) {
@@ -23,8 +24,7 @@ export class SQLiteAdapter extends BaseSQLiteAdapter {
     }
 
     protected async initDriver(): Promise<SqlDriver> {
-        const Expo: ExpoSQLite = await (new Function('m', 'return import(m)'))('expo-sqlite')
-        const db = await Expo.openDatabaseAsync(this.expoOpts.dbName ?? 'app.db')
+        const db = await SQLite.openDatabaseAsync(this.expoOpts.dbName)
 
         // Single exec bridge for our NativeDriver
         const exec = async (sql: string, params?: unknown[]) => {
@@ -41,4 +41,3 @@ export class SQLiteAdapter extends BaseSQLiteAdapter {
         return new SQLExpoDriver(exec)
     }
 }
-export type { SQLiteExpoOptions as SQLiteAdapterOptions }

@@ -5,14 +5,15 @@ import type { SqlDriver } from '@vibecode-db/sqlite-core'
 import type { DBSpec } from '@vibecode-db/client'
 import { BaseSQLiteAdapterOptions } from '@vibecode-db/sqlite-core'
 
-export type SQLiteWebOptions = BaseSQLiteAdapterOptions & {
-    wasmUrl?: string
+export type SQLiteWebAdapterOptions = BaseSQLiteAdapterOptions & {
+    wasmUrl: string
 }
 
-export class SQLiteAdapter extends BaseSQLiteAdapter {
-    constructor(dbSpec: DBSpec<any>, private webOpts: SQLiteWebOptions = {}) {
+export class SQLiteWebAdapter extends BaseSQLiteAdapter {
+    constructor(dbSpec: DBSpec<any>, private webOpts: SQLiteWebAdapterOptions) {
         super(dbSpec, webOpts)
         this.validateOpts()
+        this.ready = this.init()
     }
     private validateOpts() {
         if (!this.webOpts.wasmUrl) {
@@ -20,7 +21,7 @@ export class SQLiteAdapter extends BaseSQLiteAdapter {
         }
     }
     protected async initDriver(): Promise<SqlDriver> {
-        const SQL = await initSqlJs({ locateFile: () => this.webOpts.wasmUrl ?? 'sql-wasm.wasm' })
+        const SQL = await initSqlJs({ locateFile: () => this.webOpts.wasmUrl })
         const db = new SQL.Database()
         return new SqlJsDriver(db)
     }
