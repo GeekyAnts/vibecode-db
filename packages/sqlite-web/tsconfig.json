@@ -1,0 +1,15 @@
+// packages/sqlite-web/tsconfig.json
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
+    },
+    "include": [
+        "src"
+    ]
+}

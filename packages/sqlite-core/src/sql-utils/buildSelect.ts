@@ -1,5 +1,5 @@
 // buildSelect.ts
-import type { ProjectionNode, RelationIndex, QueryState } from '../../core/types'
+import type { ProjectionNode, RelationIndex, QueryState } from '../../../client/src/core/types'
 import { buildWhere } from './buildWhere'                   // <- your existing helper
 import { buildModifiers } from './buildModifiers'    // <- your existing helper
 

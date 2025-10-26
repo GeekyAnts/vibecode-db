@@ -1,4 +1,4 @@
-import type { QueryState } from '../types'
+import type { QueryState } from '../../../client/src/core/types'
 
 const q = (col: string, baseAlias?: string) =>
     baseAlias ? `${baseAlias}."${col}"` : `"${col}"`

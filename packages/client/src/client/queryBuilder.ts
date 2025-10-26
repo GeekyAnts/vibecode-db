@@ -9,7 +9,7 @@ import type {
   RowFromSchema,
   QueryState,
 } from '../core/types'
-import { parseProjection } from 'src/core/projectionUtil'
+import { parseProjection } from '../core/projectionUtil'
 
 export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchema<S>> {
   private _state: QueryState = { filters: [] }

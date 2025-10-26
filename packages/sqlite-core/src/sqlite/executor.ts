@@ -1,10 +1,10 @@
-import type { AdapterTableExecutor, QueryState, RelationIndex } from '../../core/types'
-import { buildWhere } from '../../core/sql-utils/buildWhere'
-import { buildUpdate } from '../../core/sql-utils/buildUpdate'
-import { buildDelete } from '../../core/sql-utils/buildDelete'
-import { buildInsert } from '../../core/sql-utils/buildInsert'
-import { buildSelect } from '../../core/sql-utils/buildSelect'
-import { hydrateToNested } from 'src/core/sql-utils/common'
+import type { AdapterTableExecutor, QueryState, RelationIndex } from '@vibecode-db/client'
+import { buildWhere } from '../sql-utils/buildWhere'
+import { buildUpdate } from '../sql-utils/buildUpdate'
+import { buildDelete } from '../sql-utils/buildDelete'
+import { buildInsert } from '../sql-utils/buildInsert'
+import { buildSelect } from '../sql-utils/buildSelect'
+import { hydrateToNested } from '../sql-utils/common'
 import { SqlDriver } from './driver'
 
 export class SQLiteTableExecutor implements AdapterTableExecutor {
@@ -16,7 +16,6 @@ export class SQLiteTableExecutor implements AdapterTableExecutor {
     ) { }
 
     private async ensureReady() { if (this.ready) await this.ready }
-
 
 
     async select(select: string | undefined, state: QueryState) {

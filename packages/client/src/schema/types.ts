@@ -1,4 +1,4 @@
-import { RelationIndex } from 'src/core/types'
+import { RelationIndex } from '../core/types'
 import { z } from 'zod'
 
 export type ColumnKind =

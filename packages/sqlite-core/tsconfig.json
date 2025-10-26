@@ -1,0 +1,13 @@
+// packages/sqlite-core/tsconfig.json
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "lib": [
+            "ES2020"
+        ],
+    },
+    "include": [
+        "src",
+    ]
+}

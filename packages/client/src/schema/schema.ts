@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ColumnDescriptor, ColumnKind, ColumnRef, DefinedSchema, TableDef } from './types'
-import { RelationIndex } from 'src/core/types'
+import { RelationIndex } from '../core/types'
 
 /** Base Zod type by kind */
 function kindToZod(kind: ColumnKind, enumValues?: readonly string[], length?: number): z.ZodTypeAny {

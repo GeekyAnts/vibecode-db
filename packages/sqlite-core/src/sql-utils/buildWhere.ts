@@ -1,4 +1,4 @@
-import type { FilterOp, QueryState } from '../../core/types'
+import type { FilterOp, QueryState } from '../../../client/src/core/types'
 
 /**
  * Build a SQL WHERE clause from filter ops.

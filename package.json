@@ -1,56 +1,8 @@
 {
-  "name": "@vibecode-db/client",
-  "version": "1.0.0",
+  "private": true,
+  "name": "vibecode-db",
   "description": "Unified front-end DB API with pluggable adapters (Runtime, Supabase, ...).",
-  "license": "MIT",
-  "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "sideEffects": false,
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    },
-    "./adapters/supabase": {
-      "types": "./dist/adapters/supabase/index.d.ts",
-      "import": "./dist/adapters/supabase/index.mjs",
-      "require": "./dist/adapters/supabase/index.cjs"
-    },
-    "./adapters/runtime": {
-      "types": "./dist/adapters/runtime/index.d.ts",
-      "import": "./dist/adapters/runtime/index.mjs",
-      "require": "./dist/adapters/runtime/index.cjs"
-    }
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
-    "sql.js": "^1.13.0",
-    "zod": "^4.1.11"
-  },
-  "devDependencies": {
-    "@types/sql.js": "^1.4.9",
-    "@typescript-eslint/eslint-plugin": "^8.44.1",
-    "@typescript-eslint/parser": "^8.44.1",
-    "eslint": "^9.36.0",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.6.2",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
-  }
+  "workspaces": [
+    "packages/*"
+  ]
 }

@@ -1,5 +1,6 @@
 # Node
 node_modules
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
@@ -8,6 +9,9 @@ package-lock.json
 # Build
 dist
 *.tsbuildinfo
+**/dist/
+*.log
+
 
 # Env
 .env

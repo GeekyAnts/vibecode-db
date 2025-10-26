@@ -1,0 +1,41 @@
+{
+    "name": "@vibecode-db/sqlite-expo",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Expo/React-Native SQLite adapter using expo-sqlite",
+    "main": "dist/index.cjs",
+    "types": "dist/index.d.ts",
+    "sideEffects": false,
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "peerDependencies": {
+        "expo-sqlite": "^16.0.8"
+    },
+    "dependencies": {
+        "@vibecode-db/client": "1.0.0",
+        "@vibecode-db/sqlite-core": "1.0.0"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1",
+        "eslint": "^9.36.0",
+        "eslint-config-prettier": "^10.1.8",
+        "prettier": "^3.6.2",
+        "tsup": "^8.5.0",
+        "typescript": "^5.9.2",
+        "vitest": "^3.2.4"
+    },
+    "scripts": {
+        "build": "tsup"
+    }
+}
