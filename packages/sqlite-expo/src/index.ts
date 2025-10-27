@@ -24,6 +24,7 @@ export class SQLiteExpoAdapter extends BaseSQLiteAdapter {
     }
 
     protected async initDriver(): Promise<SqlDriver> {
+        await SQLite.deleteDatabaseAsync(this.expoOpts.dbName);
         const db = await SQLite.openDatabaseAsync(this.expoOpts.dbName)
 
         // Single exec bridge for our NativeDriver

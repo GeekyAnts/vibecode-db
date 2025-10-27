@@ -15,7 +15,6 @@
         "expo-sqlite": "^16.0.8"
     },
     "dependencies": {
-        "@vibecode-db/client": "1.0.0",
         "@vibecode-db/sqlite-core": "1.0.0"
     },
     "exports": {
