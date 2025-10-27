@@ -1,14 +1,15 @@
 import { BaseSQLiteAdapter } from '@vibecode-db/sqlite-core'
 import type { SqlDriver } from '@vibecode-db/sqlite-core'
 import type { DBSpec } from '@vibecode-db/client'
-import { BaseSQLiteAdapterOptions } from '@vibecode-db/sqlite-core'
+import { BaseSQLiteAdapterOptions, wipeDatabase } from '@vibecode-db/sqlite-core'
 import { SQLExpoDriver } from './sqlexpo-driver'
 import * as SQLite from 'expo-sqlite'
 
 // typed import to satisfy TS, but use dynamic import at runtime
 
 export type SQLiteExpoAdapterOptions = BaseSQLiteAdapterOptions & {
-    dbName: string
+    dbName: string,
+    resetOnStart?: boolean
 }
 
 export class SQLiteExpoAdapter extends BaseSQLiteAdapter {
@@ -24,7 +25,6 @@ export class SQLiteExpoAdapter extends BaseSQLiteAdapter {
     }
 
     protected async initDriver(): Promise<SqlDriver> {
-        await SQLite.deleteDatabaseAsync(this.expoOpts.dbName);
         const db = await SQLite.openDatabaseAsync(this.expoOpts.dbName)
 
         // Single exec bridge for our NativeDriver
@@ -39,6 +39,10 @@ export class SQLiteExpoAdapter extends BaseSQLiteAdapter {
             }
         }
 
-        return new SQLExpoDriver(exec)
+        const expoDriver = new SQLExpoDriver(exec)
+        if (this.expoOpts.resetOnStart) {
+            await wipeDatabase(expoDriver)
+        }
+        return expoDriver
     }
 }
