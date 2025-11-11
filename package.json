@@ -4,5 +4,15 @@
   "description": "Unified front-end DB API with pluggable adapters (Runtime, Supabase, ...).",
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "build": "npm run build -ws",
+    "dev": "npm run dev -ws",
+    "changeset": "changeset",
+    "release:version": "changeset version",
+    "release:publish": "npm run build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7"
+  }
 }

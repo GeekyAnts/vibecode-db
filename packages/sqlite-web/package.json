@@ -37,6 +37,6 @@
         "vitest": "^3.2.4"
     },
     "scripts": {
-        "build": "tsup"
+        "build": "tsup src/index.ts --dts --sourcemap --format cjs,esm --clean"
     }
 }
