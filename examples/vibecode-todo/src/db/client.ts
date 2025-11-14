@@ -2,6 +2,7 @@
 import { vibecodeTable, col, references, defineSchema, createClient, type DBSpec } from '@vibecode-db/client'
 import { SupabaseAdapter } from '@vibecode-db/client/adapters/supabase'
 import { SQLiteWebAdapter, type SQLiteWebAdapterOptions } from '@vibecode-db/sqlite-web'
+// import { CustomAdapter, createRESTHandlers } from '@vibecode-db/client/adapters/custom'
 
 export const users = vibecodeTable('users', {
   id: col.integer(),
@@ -42,7 +43,7 @@ export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
 }
 
 
-const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase'
+const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
 
 // SQLite migrations (DDL) — run once in the WASM DB
 const migrations: string[] = [
@@ -70,7 +71,7 @@ const migrations: string[] = [
 
 // Shared options for SQLite WASM
 const sqliteOpts: SQLiteWebAdapterOptions = {
-  wasmUrl: '/sql-wasm.wasm',  // served from /public
+  wasmUrl: 'node_modules/sql.js/dist/sql-wasm.wasm',  // served from /public
   migrations,
   enableForeignKeys: true,
   seedBehavior: 'upsert',     // upsert seeds on first load
@@ -85,7 +86,23 @@ export const vibecode = createClient({
         url: import.meta.env.VITE_SUPABASE_URL as string,
         key: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
       })
-    } else {
+    }
+    // Example: Using CustomAdapter for your own REST API backend
+    // else if (which === 'custom') {
+    //   return new CustomAdapter(ctx, {
+    //     handlers: createRESTHandlers({
+    //       baseUrl: 'https://your-api.example.com',
+    //       headers: () => ({
+    //         'Authorization': `Bearer ${import.meta.env.VITE_API_TOKEN}`,
+    //         'Content-Type': 'application/json'
+    //       })
+    //     }),
+    //     onInit: async () => {
+    //       console.log('Custom backend connected')
+    //     }
+    //   })
+    // }
+    else {
       // SQLite (browser) — sql.js in-memory
       const adapter = new SQLiteWebAdapter(ctx, sqliteOpts)
 
@@ -96,16 +113,4 @@ export const vibecode = createClient({
     }
   },
 })
-
-// export const vibecode = createClient({
-//   dbSpec,
-//   adapter: (ctx: any) =>
-//     which === 'supabase'
-//       ? new SupabaseAdapter(ctx, {
-//         url: import.meta.env.VITE_SUPABASE_URL as string,
-//         key: import.meta.env.VITE_SUPABASE_ANON_KEY as string
-//       })
-//       : new RuntimeAdapter(ctx),
-// })
-
 
