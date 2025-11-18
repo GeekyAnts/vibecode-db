@@ -21,7 +21,7 @@
 html,
 body,
 #root {
-  height: 100%;
+  /* height: 100%; */
 }
 
 body {
@@ -94,7 +94,12 @@ body {
   background: #10b981;
 }
 
-/* teal  */
+/* teal */
+.vc-badge.is-custom::before {
+  background: #f59e0b;
+}
+
+/* orange */
 
 /* ===== Cards ===== */
 .vc-card {

@@ -1,8 +1,8 @@
 
 import { vibecodeTable, col, references, defineSchema, createClient, type DBSpec } from '@vibecode-db/client'
-import { SupabaseAdapter } from '@vibecode-db/client/adapters/supabase'
+import { SupabaseAdapter } from '@vibecode-db/client'
 import { SQLiteWebAdapter, type SQLiteWebAdapterOptions } from '@vibecode-db/sqlite-web'
-// import { CustomAdapter, createRESTHandlers } from '@vibecode-db/client/adapters/custom'
+import { CustomAdapter, createRESTHandlers } from '@vibecode-db/client'
 
 export const users = vibecodeTable('users', {
   id: col.integer(),
@@ -61,7 +61,7 @@ const migrations: string[] = [
      "completed"   INTEGER,
      "created_at"  TEXT,
      "updated_at"  TEXT,
-     "user_id"     INTEGER,
+     "user_id"     INTEGER, 
      FOREIGN KEY("user_id") REFERENCES "users"("id")
    );`,
 
@@ -86,23 +86,20 @@ export const vibecode = createClient({
         url: import.meta.env.VITE_SUPABASE_URL as string,
         key: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
       })
-    }
-    // Example: Using CustomAdapter for your own REST API backend
-    // else if (which === 'custom') {
-    //   return new CustomAdapter(ctx, {
-    //     handlers: createRESTHandlers({
-    //       baseUrl: 'https://your-api.example.com',
-    //       headers: () => ({
-    //         'Authorization': `Bearer ${import.meta.env.VITE_API_TOKEN}`,
-    //         'Content-Type': 'application/json'
-    //       })
-    //     }),
-    //     onInit: async () => {
-    //       console.log('Custom backend connected')
-    //     }
-    //   })
-    // }
-    else {
+    } else if (which === 'custom') {
+      // CustomAdapter: Connect to your own REST API backend
+      return new CustomAdapter(ctx, {
+        handlers: createRESTHandlers({
+          baseUrl: import.meta.env.VITE_CUSTOM_API_BASE_URL as string || 'https://jsonplaceholder.typicode.com',
+          headers: () => ({
+            'Content-Type': 'application/json'
+          })
+        }),
+        onInit: async () => {
+          console.log('✅ CustomAdapter connected to:', import.meta.env.VITE_CUSTOM_API_BASE_URL || 'JSONPlaceholder API')
+        }
+      })
+    } else {
       // SQLite (browser) — sql.js in-memory
       const adapter = new SQLiteWebAdapter(ctx, sqliteOpts)
 

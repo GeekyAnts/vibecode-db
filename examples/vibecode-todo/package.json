@@ -10,9 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vibecode-db/client": "file:../../vibecode-db-client-1.0.0.tgz",
-    "@vibecode-db/sqlite-core": "file:../../vibecode-db-sqlite-core-1.0.0.tgz",
-    "@vibecode-db/sqlite-web": "file:../../vibecode-db-sqlite-web-1.0.0.tgz",
+    "@vibecode-db/client": "file:../../packages/client/vibecode-db-client-1.0.0.tgz",
+    "@vibecode-db/sqlite-core": "file:../../packages/sqlite-core/vibecode-db-sqlite-core-1.0.0.tgz",
+    "@vibecode-db/sqlite-web": "file:../../packages/sqlite-web/vibecode-db-sqlite-web-1.0.0.tgz",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "sql.js": "^1.13.0"

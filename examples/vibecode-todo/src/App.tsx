@@ -20,8 +20,8 @@ type Todo = {
 }
 
 
-const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'runtime' | 'supabase'
-const useSupabase = which === 'supabase' ? true : false
+const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
+const adapterLabel = which === 'supabase' ? 'Supabase Adapter' : which === 'custom' ? 'Custom Adapter' : 'SQLite Adapter'
 
 
 
@@ -76,7 +76,6 @@ export default function App() {
 
           // 3) Execute at the end
           const { data, error } = await qb.select(projection)
-          console.log("data 1", data)
 
           if (!isCancelled) {
             if (error) {
@@ -112,7 +111,6 @@ export default function App() {
     }
 
     const data = await vibecode.from('todos').insert(payload)
-    console.log("data 2", data)
     // if (error) {
     //   console.error('Insert error', error)
     //   return
@@ -126,14 +124,12 @@ export default function App() {
         .order('created_at', { ascending: false })
         .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
       setTodos((data as Todo[]) ?? [])
-      console.log("data 3", data)
     } else {
       const { data } = await vibecode
         .from('todos')
         .order('created_at', { ascending: false })
         .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
       setTodos((data as Todo[]) ?? [])
-      console.log("data 4", data)
     }
   }
 
@@ -161,8 +157,8 @@ export default function App() {
         {/* Header */}
         <header className="vc-header">
           <h1 className="vc-title-hero">Vibecode Todos</h1>
-          <span className={`vc-badge ${useSupabase ? 'is-supa' : 'is-runtime'}`}>
-            {useSupabase ? 'Supabase Adapter' : 'SQLite Adapter'}
+          <span className={`vc-badge ${which === 'supabase' ? 'is-supa' : which === 'custom' ? 'is-custom' : 'is-runtime'}`}>
+            {adapterLabel}
           </span>
         </header>
 
