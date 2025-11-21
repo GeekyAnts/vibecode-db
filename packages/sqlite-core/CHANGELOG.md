@@ -1,5 +1,16 @@
 # @vibecode-db/sqlite-core
 
+## 2.1.0
+
+### Minor Changes
+
+- Added multiple contraints for SQLite and provision for getting the migrations auto-generated.
+
+### Patch Changes
+
+- Updated dependencies
+  - @vibecode-db/client@2.1.0
+
 ## 2.0.0
 
 ### Major Changes

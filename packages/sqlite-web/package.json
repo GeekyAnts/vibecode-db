@@ -1,6 +1,6 @@
 {
     "name": "@vibecode-db/sqlite-web",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "type": "module",
     "description": "Web SQLite adapter using sql.js",
     "main": "dist/index.cjs",
@@ -16,7 +16,7 @@
         "sql.js": "^1.13.0"
     },
     "dependencies": {
-        "@vibecode-db/sqlite-core": "2.0.0"
+        "@vibecode-db/sqlite-core": "2.1.0"
     },
     "exports": {
         ".": {
