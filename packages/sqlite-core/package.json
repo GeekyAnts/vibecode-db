@@ -1,6 +1,6 @@
 {
     "name": "@vibecode-db/sqlite-core",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "type": "module",
     "main": "dist/index.cjs",
     "module": "dist/index.mjs",
@@ -19,7 +19,7 @@
         }
     },
     "dependencies": {
-        "@vibecode-db/client": "1.0.0"
+        "@vibecode-db/client": "2.0.0"
     },
     "devDependencies": {
         "tsup": "^8.5.0",

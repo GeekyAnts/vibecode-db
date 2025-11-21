@@ -5,18 +5,21 @@ import { SQLiteWebAdapter, type SQLiteWebAdapterOptions } from '@vibecode-db/sql
 import { CustomAdapter, createRESTHandlers } from '@vibecode-db/client'
 
 export const users = vibecodeTable('users', {
-  id: col.integer(),
-  name: col.varchar(),
-  email: col.varchar(),
+  id: col.integer().primaryKey().autoIncrement().comment('Unique user identifier'),
+  name: col.varchar().notNull().comment('User full name'),
+  email: col.varchar().unique().notNull().comment('User email address'),
 })
 
 export const todos = vibecodeTable('todos', {
-  id: col.varchar(),
-  title: col.varchar({ length: 256 }),
-  completed: col.boolean(),
-  created_at: col.timestamp(),
-  updated_at: col.timestamp(),
-  user_id: references(col.integer('user_id'), () => users.id),
+  id: col.varchar().primaryKey().comment('Unique todo identifier (UUID)'),
+  title: col.varchar({ length: 256 }).notNull().comment('Todo title'),
+  completed: col.boolean().default(false).notNull().comment('Completion status'),
+  created_at: col.timestamp().notNull().index().comment('Creation timestamp'),
+  updated_at: col.timestamp().notNull().comment('Last update timestamp'),
+  user_id: references(
+    col.integer('user_id').notNull().onDelete('CASCADE').index(),
+    () => users.id
+  ),
 })
 
 export const db = defineSchema({ users, todos })
@@ -45,34 +48,10 @@ export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
 
 const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
 
-// SQLite migrations (DDL) — run once in the WASM DB
-const migrations: string[] = [
-  // users
-  `CREATE TABLE IF NOT EXISTS "users" (
-     "id"      INTEGER PRIMARY KEY,
-     "name"    TEXT,
-     "email"   TEXT
-   );`,
-
-  // todos + FK → users.id
-  `CREATE TABLE IF NOT EXISTS "todos" (
-     "id"          TEXT PRIMARY KEY,
-     "title"       TEXT,
-     "completed"   INTEGER,
-     "created_at"  TEXT,
-     "updated_at"  TEXT,
-     "user_id"     INTEGER, 
-     FOREIGN KEY("user_id") REFERENCES "users"("id")
-   );`,
-
-  // (optional) helpful index
-  `CREATE INDEX IF NOT EXISTS "todos_created_at_idx" ON "todos" ("created_at");`
-]
-
 // Shared options for SQLite WASM
 const sqliteOpts: SQLiteWebAdapterOptions = {
   wasmUrl: 'node_modules/sql.js/dist/sql-wasm.wasm',  // served from /public
-  migrations,
+  migrations: db.migrations,  // Auto-generated from schema!
   enableForeignKeys: true,
   seedBehavior: 'upsert',     // upsert seeds on first load
 }

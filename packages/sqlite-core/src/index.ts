@@ -10,3 +10,17 @@ export * from './sql-utils/buildUpdate'
 export * from './sql-utils/buildDelete'
 export * from './sql-utils/buildModifiers'
 export * from './sql-utils/common'
+
+// Re-export DDL generation utilities from client package
+export {
+    generateMigrations,
+    type DDLGenerationOptions,
+    mapColumnKindToSQLiteType,
+    generateColumnDefinition,
+    generateEnumCheckConstraint,
+    generateCreateTableStatement,
+    generateIndexStatements,
+    quoteIdentifier,
+    formatDefaultValue,
+    generateComment,
+} from '@vibecode-db/client'
