@@ -1,5 +1,11 @@
 # @vibecode-db/sqlite-core
 
+## 2.2.0
+
+### Minor Changes
+
+- Minor fix.
+
 ## 2.1.0
 
 ### Minor Changes

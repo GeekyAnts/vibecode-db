@@ -1,5 +1,12 @@
 # @vibecode-db/sqlite-expo
 
+## 2.2.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @vibecode-db/sqlite-core@2.2.0
+
 ## 2.0.0
 
 ### Major Changes
