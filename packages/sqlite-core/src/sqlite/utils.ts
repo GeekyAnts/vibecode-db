@@ -9,12 +9,33 @@ export async function applyPragmasAndMigrations(
     if (opts.enableForeignKeys !== false) await driver.run('PRAGMA foreign_keys = ON;')
     const ddls = opts.migrations ?? []
     if (!ddls.length) return
+    
+    // Filter out empty strings and standalone comment-only lines
+    // Comments embedded within SQL statements (multi-line) are preserved
+    // But standalone comment lines and empty strings should be skipped
+    const validMigrations = ddls.filter(ddl => {
+        const trimmed = ddl.trim()
+        // Skip empty strings
+        if (!trimmed) return false
+        // Skip standalone comment lines (single-line comments that don't contain SQL)
+        // Multi-line statements with embedded comments are valid and should be executed
+        const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+        const hasNonCommentLines = lines.some(line => !line.startsWith('--'))
+        // Only skip if it's a single comment line with no SQL
+        if (!hasNonCommentLines && lines.length === 1 && lines[0].startsWith('--')) {
+            return false
+        }
+        return true
+    })
+    
+    if (!validMigrations.length) return
+    
     if (driver.transaction) {
         await driver.transaction(async () => {
-            for (const ddl of ddls) await driver.run(ddl)
+            for (const ddl of validMigrations) await driver.run(ddl)
         })
     } else {
-        for (const ddl of ddls) await driver.run(ddl)
+        for (const ddl of validMigrations) await driver.run(ddl)
     }
 }
 
