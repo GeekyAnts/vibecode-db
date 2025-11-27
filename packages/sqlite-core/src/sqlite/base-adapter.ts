@@ -26,4 +26,20 @@ export abstract class BaseSQLiteAdapter implements DatabaseAdapter {
     from(table: string): AdapterTableExecutor {
         return new SQLiteTableExecutor(table, () => this.driver, this.dbSpec.relations, this.ready)
     }
+
+    /**
+     * Get the SQL driver instance (for sharing with auth adapter)
+     * @internal
+     */
+    getDriver(): SqlDriver {
+        return this.driver
+    }
+
+    /**
+     * Get the ready promise (for sharing with auth adapter)
+     * @internal
+     */
+    getReady(): Promise<void> {
+        return this.ready
+    }
 }

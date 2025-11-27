@@ -1,13 +1,19 @@
 // examples/todo-vite/src/App.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { vibecode } from './db/client'
-import './App.css'
-
+import { auth } from './auth/client'
+// Import User type from auth types
 type User = {
-  id: number
-  name: string
+  id: string
   email: string
+  emailVerified?: boolean
+  name?: string
+  avatarUrl?: string
+  createdAt?: Date
+  updatedAt?: Date
+  metadata?: Record<string, unknown>
 }
+import './App.css'
 
 type Todo = {
   id: string
@@ -19,63 +25,86 @@ type Todo = {
   users?: { name: string; email: string }
 }
 
-
 const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
 const adapterLabel = which === 'supabase' ? 'Supabase Adapter' : which === 'custom' ? 'Custom Adapter' : 'SQLite Adapter'
 
-
-
-
 export default function App() {
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedUserId, setSelectedUserId] = useState<number>(-1)
+  const [user, setUser] = useState<User | null>(null)
   const [todos, setTodos] = useState<Todo[]>([])
   const [newTitle, setNewTitle] = useState('')
+  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [isSigningUp, setIsSigningUp] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
+  // Auth form state
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [showSignUp, setShowSignUp] = useState(false)
 
-  const usersById = useMemo(() => {
-    const m = new Map<number, User>()
-    users.forEach(u => m.set(u.id, u))
-    return m
-  }, [users])
-
-  // Load users once
+  // Load session on mount
   useEffect(() => {
     ; (async () => {
-      const { data, error } = await vibecode.from('users').order('name', { ascending: true }).select('id, name, email')
-
-      if (error) {
-        console.error('Load users error', error)
-        return
+      const { data } = await auth.getSession()
+      if (data) {
+        setUser(data.user)
       }
-      setUsers((data as User[]) ?? [])
-      // if none selected yet, default to first (if you prefer)
-      if (data && data.length && selectedUserId === -1) setSelectedUserId((data as User[])[0].id)
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Load todos whenever selected user changes
+  // Load todos when user changes
   useEffect(() => {
+    if (!user) {
+      setTodos([])
+      return
+    }
+
     let isCancelled = false
 
       ; (async () => {
         try {
-          // 1) Choose projection once
-          const projection = 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
+          // Find user in users table by email (or create if needed)
+          const { data: usersData } = await vibecode
+            .from('users')
+            .eq('email', user.email)
+            .select('id, name, email')
 
+          let userId: number
 
-          // 2) Build the chain (filters/modifiers first)
-          let qb = vibecode
-            .from('todos')
-            .order('created_at', { ascending: false })
+          if (usersData && Array.isArray(usersData) && usersData.length > 0) {
+            const id = usersData[0].id
+            userId = typeof id === 'number' ? id : parseInt(String(id), 10)
+          } else {
+            // Create user in users table
+            await vibecode
+              .from('users')
+              .insert({
+                name: user.name || user.email,
+                email: user.email,
+              })
 
-          if (selectedUserId !== -1) {
-            qb = qb.eq('user_id', selectedUserId)
+            // Re-fetch to get the ID
+            const { data: fetchedUser } = await vibecode
+              .from('users')
+              .eq('email', user.email)
+              .select('id')
+
+            if (fetchedUser && Array.isArray(fetchedUser) && fetchedUser.length > 0) {
+              const id = fetchedUser[0].id
+              userId = typeof id === 'number' ? id : parseInt(String(id), 10)
+            } else {
+              return
+            }
           }
 
-          // 3) Execute at the end
-          const { data, error } = await qb.select(projection)
+          const projection = 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
+
+          const { data, error } = await vibecode
+            .from('todos')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .select(projection)
 
           if (!isCancelled) {
             if (error) {
@@ -90,17 +119,110 @@ export default function App() {
       })()
 
     return () => { isCancelled = true }
-    // If useSupabase can change at runtime, include it below too.
-  }, [selectedUserId /*, useSupabase*/])
+  }, [user])
 
+  async function handleSignUp() {
+    if (!email || !password) {
+      setAuthError('Email and password are required')
+      return
+    }
+
+    setIsSigningUp(true)
+    setAuthError(null)
+
+    const { data, error } = await auth.signUp({
+      email,
+      password,
+      name: name || undefined,
+    })
+
+    setIsSigningUp(false)
+
+    if (error) {
+      setAuthError(error.message)
+      return
+    }
+
+    if (data) {
+      setUser(data.user)
+      setEmail('')
+      setPassword('')
+      setName('')
+      setShowSignUp(false)
+    }
+  }
+
+  async function handleSignIn() {
+    if (!email || !password) {
+      setAuthError('Email and password are required')
+      return
+    }
+
+    setIsSigningIn(true)
+    setAuthError(null)
+
+    const { data, error } = await auth.signIn({
+      email,
+      password,
+    })
+
+    setIsSigningIn(false)
+
+    if (error) {
+      setAuthError(error.message)
+      return
+    }
+
+    if (data) {
+      setUser(data.user)
+      setEmail('')
+      setPassword('')
+    }
+  }
+
+  async function handleSignOut() {
+    await auth.signOut()
+    setUser(null)
+    setTodos([])
+  }
 
   async function addTodo() {
-    if (!newTitle.trim()) return
-    const now = new Date()
-    // Require a user for insertion (multi-user demo)
-    const userId = selectedUserId === -1 ? users[0]?.id : selectedUserId
-    if (!userId) return
+    if (!newTitle.trim() || !user) return
 
+    // Get or create user in users table
+    const { data: usersData } = await vibecode
+      .from('users')
+      .eq('email', user.email)
+      .select('id')
+
+    let userId: number
+
+    if (usersData && Array.isArray(usersData) && usersData.length > 0) {
+      const id = usersData[0].id
+      userId = typeof id === 'number' ? id : parseInt(String(id), 10)
+    } else {
+      await vibecode
+        .from('users')
+        .insert({
+          name: user.name || user.email,
+          email: user.email,
+        })
+
+      // Re-fetch to get the ID
+      const { data: fetchedUser } = await vibecode
+        .from('users')
+        .eq('email', user.email)
+        .select('id')
+
+      if (fetchedUser && Array.isArray(fetchedUser) && fetchedUser.length > 0) {
+        const id = fetchedUser[0].id
+        userId = typeof id === 'number' ? id : parseInt(String(id), 10)
+      } else {
+        return
+      }
+    }
+
+    const now = new Date()
     const payload = {
       id: crypto.randomUUID(),
       title: newTitle.trim(),
@@ -110,27 +232,21 @@ export default function App() {
       updated_at: now,
     }
 
-    const data = await vibecode.from('todos').insert(payload)
-    // if (error) {
-    //   console.error('Insert error', error)
-    //   return
-    // }
-    setNewTitle('')
-    // reload
-    if (selectedUserId !== -1) {
-      const { data } = await vibecode
-        .from('todos')
-        .eq('user_id', selectedUserId)
-        .order('created_at', { ascending: false })
-        .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
-      setTodos((data as Todo[]) ?? [])
-    } else {
-      const { data } = await vibecode
-        .from('todos')
-        .order('created_at', { ascending: false })
-        .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
-      setTodos((data as Todo[]) ?? [])
+    const { error } = await vibecode.from('todos').insert(payload)
+    if (error) {
+      console.error('Insert error', error)
+      return
     }
+
+    setNewTitle('')
+
+    // Reload todos
+    const { data } = await vibecode
+      .from('todos')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
+    setTodos((data as Todo[]) ?? [])
   }
 
   async function toggleTodo(id: string, completed: boolean) {
@@ -151,6 +267,76 @@ export default function App() {
     setTodos(prev => prev.filter(t => t.id !== id))
   }
 
+  // Show auth UI if not signed in
+  if (!user) {
+    return (
+      <div className="vc-root">
+        <div className="vc-container">
+          <header className="vc-header">
+            <h1 className="vc-title-hero">Vibecode Todos</h1>
+            <span className={`vc-badge ${which === 'supabase' ? 'is-supa' : which === 'custom' ? 'is-custom' : 'is-runtime'}`}>
+              {adapterLabel}
+            </span>
+          </header>
+
+          <section className="vc-card">
+            <h2>{showSignUp ? 'Sign Up' : 'Sign In'}</h2>
+            {authError && (
+              <div style={{ color: 'red', marginBottom: '1rem' }}>{authError}</div>
+            )}
+            {showSignUp && (
+              <div style={{ marginBottom: '1rem' }}>
+                <input
+                  className="vc-input"
+                  type="text"
+                  placeholder="Name (optional)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            )}
+            <div style={{ marginBottom: '1rem' }}>
+              <input
+                className="vc-input"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <input
+                className="vc-input"
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <button
+              className="vc-button"
+              onClick={showSignUp ? handleSignUp : handleSignIn}
+              disabled={isSigningIn || isSigningUp}
+            >
+              {isSigningIn || isSigningUp ? 'Loading...' : showSignUp ? 'Sign Up' : 'Sign In'}
+            </button>
+            <div style={{ marginTop: '1rem' }}>
+              <button
+                className="vc-link"
+                onClick={() => {
+                  setShowSignUp(!showSignUp)
+                  setAuthError(null)
+                }}
+              >
+                {showSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="vc-root">
       <div className="vc-container">
@@ -160,33 +346,21 @@ export default function App() {
           <span className={`vc-badge ${which === 'supabase' ? 'is-supa' : which === 'custom' ? 'is-custom' : 'is-runtime'}`}>
             {adapterLabel}
           </span>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.9rem', color: '#666' }}>{user.email}</span>
+            <button className="vc-link" onClick={handleSignOut}>Sign Out</button>
+          </div>
         </header>
 
-        {/* Controls */}
+        {/* Add Todo */}
         <section className="vc-card">
-          <label htmlFor="user" className="vc-label">User</label>
-          <div className="vc-select-wrap">
-            <select
-              id="user"
-              className="vc-select"
-              value={selectedUserId}
-              onChange={(e) => { setSelectedUserId(Number(e.target.value)) }}
-            >
-              <option value="all">All users</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} ({u.email})
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="vc-add">
             <input
               className="vc-input"
               placeholder="Add a task…"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addTodo()}
             />
             <button className="vc-button" onClick={addTodo}>Add</button>
           </div>
@@ -196,7 +370,7 @@ export default function App() {
         <section className="vc-card">
           <ul className="vc-list">
             {todos.map((t) => {
-              const owner = t.users?.name ?? usersById.get(t.user_id)?.name ?? 'Unknown'
+              const owner = t.users?.name ?? user.name ?? 'Unknown'
               return (
                 <li key={t.id} className="vc-row">
                   <input
@@ -218,13 +392,11 @@ export default function App() {
             })}
 
             {!todos.length && (
-              <li className="vc-empty">No todos yet.</li>
+              <li className="vc-empty">No todos yet. Add one above!</li>
             )}
           </ul>
         </section>
       </div>
     </div>
   )
-
-
 }

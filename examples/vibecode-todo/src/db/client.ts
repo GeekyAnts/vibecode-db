@@ -27,21 +27,9 @@ export const db = defineSchema({ users, todos })
 export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
   schema: db.zodBundle,
   relations: db.relations,
+  // Removed hardcoded users - they'll come from auth
   seed: {
-    users: [
-      { id: 1, name: 'Ada', email: 'ada@example.com' },
-      { id: 2, name: 'Alan', email: 'alan@example.com' },
-    ],
-    todos: [
-      {
-        id: 't1',
-        title: 'Wire the UI',
-        completed: false,
-        user_id: 1,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    ],
+    todos: [],
   },
 }
 

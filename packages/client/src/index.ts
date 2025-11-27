@@ -9,3 +9,7 @@ export * from './ddl/generateDDL'
 // Adapters
 export * from './adapters/supabase'
 export * from './adapters/custom'
+
+// Auth
+export * from './auth'
+export type { Session, User, SignUpCredentials, SignInCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, UpdateUserProfile } from './auth/types'
