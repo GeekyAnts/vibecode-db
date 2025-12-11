@@ -54,8 +54,20 @@ export class SupabaseAuthAdapter implements AuthAdapter {
         return { data: null, error }
       }
 
-      if (!data.session || !data.user) {
+      if (!data.user) {
         return { data: null, error: new Error('Sign up failed') }
+      }
+
+      // When email confirmation is enabled, session is null until user verifies email
+      // Return a partial session with just the user info
+      if (!data.session) {
+        return {
+          data: {
+            user: this.mapSupabaseUser(data.user),
+            accessToken: '', // No token until email is verified
+          },
+          error: null,
+        }
       }
 
       return {
@@ -83,6 +95,7 @@ export class SupabaseAuthAdapter implements AuthAdapter {
       })
 
       if (error) {
+        console.log('sign in error', error)
         return { data: null, error }
       }
 
@@ -181,7 +194,7 @@ export class SupabaseAuthAdapter implements AuthAdapter {
       await this.ensureReady()
 
       // Get redirect URL - works in browser, fallback for Node.js
-      const redirectTo = typeof window !== 'undefined' 
+      const redirectTo = typeof window !== 'undefined'
         ? `${window.location.origin}/reset-password`
         : 'http://localhost:3000/reset-password'
 
