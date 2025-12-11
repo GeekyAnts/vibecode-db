@@ -5,6 +5,9 @@ import type { SqlDriver } from '@vibecode-db/sqlite-core'
 import type { DBSpec } from '@vibecode-db/client'
 import { BaseSQLiteAdapterOptions } from '@vibecode-db/sqlite-core'
 
+// Re-export auth adapter
+export { SQLiteWebAuthAdapter, type SQLiteWebAuthOptions } from './auth-adapter'
+
 export type SQLiteWebAdapterOptions = BaseSQLiteAdapterOptions & {
     wasmUrl: string
 }

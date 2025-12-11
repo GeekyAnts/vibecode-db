@@ -1,6 +1,6 @@
 export * from './types'
 export * from './schema'
 export * from './createAuthClient'
-export * from './adapters/sqlite'
+// SQLite auth is now in @vibecode-db/sqlite-web and @vibecode-db/sqlite-expo
 export * from './adapters/supabase'
 

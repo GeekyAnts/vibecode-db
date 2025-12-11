@@ -5,7 +5,8 @@ import { BaseSQLiteAdapterOptions, wipeDatabase } from '@vibecode-db/sqlite-core
 import { SQLExpoDriver } from './sqlexpo-driver'
 import * as SQLite from 'expo-sqlite'
 
-// typed import to satisfy TS, but use dynamic import at runtime
+// Re-export auth adapter
+export { SQLiteExpoAuthAdapter, type SQLiteExpoAuthOptions } from './auth-adapter'
 
 export type SQLiteExpoAdapterOptions = BaseSQLiteAdapterOptions & {
     dbName: string,

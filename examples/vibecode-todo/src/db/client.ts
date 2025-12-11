@@ -1,9 +1,8 @@
-
 import { vibecodeTable, col, references, defineSchema, createClient, type DBSpec } from '@vibecode-db/client'
-import { SupabaseAdapter } from '@vibecode-db/client'
+import { SupabaseAdapter, CustomAdapter, createRESTHandlers } from '@vibecode-db/client'
 import { SQLiteWebAdapter, type SQLiteWebAdapterOptions } from '@vibecode-db/sqlite-web'
-import { CustomAdapter, createRESTHandlers } from '@vibecode-db/client'
 
+// Define schema
 export const users = vibecodeTable('users', {
   id: col.integer().primaryKey().autoIncrement().comment('Unique user identifier'),
   name: col.varchar().notNull().comment('User full name'),
@@ -27,22 +26,23 @@ export const db = defineSchema({ users, todos })
 export const dbSpec: DBSpec<typeof db.zodBundle.shape> = {
   schema: db.zodBundle,
   relations: db.relations,
-  // Removed hardcoded users - they'll come from auth
   seed: {
     todos: [],
   },
 }
 
-
 const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
 
-// Shared options for SQLite WASM
+// SQLite options
 const sqliteOpts: SQLiteWebAdapterOptions = {
-  wasmUrl: 'node_modules/sql.js/dist/sql-wasm.wasm',  // served from /public
-  migrations: db.migrations,  // Auto-generated from schema!
+  wasmUrl: '/sql-wasm.wasm',
+  migrations: db.migrations,
   enableForeignKeys: true,
-  seedBehavior: 'upsert',     // upsert seeds on first load
+  seedBehavior: 'upsert',
 }
+
+// Store DB adapter for auth to use
+export let dbAdapter: SQLiteWebAdapter | null = null
 
 // Build the client
 export const vibecode = createClient({
@@ -54,26 +54,19 @@ export const vibecode = createClient({
         key: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
       })
     } else if (which === 'custom') {
-      // CustomAdapter: Connect to your own REST API backend
       return new CustomAdapter(ctx, {
         handlers: createRESTHandlers({
           baseUrl: import.meta.env.VITE_CUSTOM_API_BASE_URL as string || 'https://jsonplaceholder.typicode.com',
-          headers: () => ({
-            'Content-Type': 'application/json'
-          })
+          headers: () => ({ 'Content-Type': 'application/json' })
         }),
         onInit: async () => {
-          console.log('✅ CustomAdapter connected to:', import.meta.env.VITE_CUSTOM_API_BASE_URL || 'JSONPlaceholder API')
+          console.log('✅ CustomAdapter connected')
         }
       })
     } else {
-      // SQLite (browser) — sql.js in-memory
-      const adapter = new SQLiteWebAdapter(ctx, sqliteOpts)
-
-      // (Optional) expose for quick dev/debug:
-      // @ts-expect-error dev-only
-      window.__vcode_sqlite = adapter
-      return adapter
+      // SQLite (browser) — sql.js
+      dbAdapter = new SQLiteWebAdapter(ctx, sqliteOpts)
+      return dbAdapter
     }
   },
 })
