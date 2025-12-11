@@ -56,8 +56,10 @@ Both share the same API through the adapter pattern.
 1. **Simplified SQLite Auth** - For prototyping only, minimal complexity
 2. **Adapter Pattern** - Swap backends without changing app code
 3. **Platform-Specific Adapters** - Web and Expo have dedicated adapters
-4. **Direct Wiring** - Auth adapter receives DB adapter directly (no globals)
+4. **Direct Wiring** - Auth adapter receives DB adapter, registers itself
 5. **In-Memory Sessions** - SQLite sessions live in memory, not database
+6. **Single Source of Truth** - User ID comes from auth adapter's session
+7. **Automatic User Scoping** - Queries auto-filter by user_id (like RLS)
 
 ## SQLite Auth (Prototyping)
 
@@ -190,6 +192,104 @@ const authAdapter = new SQLiteExpoAuthAdapter(dbAdapter, {
 })
 ```
 
+## Automatic User Scoping (RLS-like)
+
+### How It Works
+
+When you create an auth adapter, it registers itself with the DB adapter:
+
+```
+┌─────────────────────────────┐     ┌─────────────────────────────┐
+│   SQLiteWebAuthAdapter      │     │     SQLiteWebAdapter        │
+│   (Auth operations)         │────▶│     (DB operations)         │
+│                             │     │                             │
+│   currentSession: Session   │     │   authAdapter: reference    │
+│   getCurrentUserId(): id    │◀────│   getCurrentUserId(): id    │
+└─────────────────────────────┘     └─────────────────────────────┘
+                                                  │
+                                                  ▼
+                                    ┌─────────────────────────────┐
+                                    │   SQLiteTableExecutor       │
+                                    │   (Query execution)         │
+                                    │                             │
+                                    │   Auto-injects user_id      │
+                                    │   Auto-filters by user_id   │
+                                    └─────────────────────────────┘
+```
+
+**Single Source of Truth**: The user ID is always retrieved from the auth adapter's session - no duplicate state.
+
+### Automatic Behavior
+
+For tables with a `user_id` column:
+
+| Operation | Automatic Behavior |
+|-----------|-------------------|
+| `insert()` | Auto-injects `user_id = currentUserId` if not provided |
+| `select()` | Auto-adds `WHERE user_id = currentUserId` filter |
+| `update()` | Auto-adds `WHERE user_id = currentUserId` filter |
+| `delete()` | Auto-adds `WHERE user_id = currentUserId` filter |
+
+### Example
+
+**Your Schema:**
+```typescript
+const todos = vibecodeTable('todos', {
+  id: col.uuid().primaryKey(),
+  title: col.varchar().notNull(),
+  user_id: col.varchar().notNull(),  // ← Makes it user-scoped!
+})
+```
+
+**Your Code (No manual user_id handling!):**
+```typescript
+// Insert - user_id auto-injected
+await vibecode.from('todos').insert({ title: 'Buy milk' })
+
+// Select - auto-filtered to current user
+const { data } = await vibecode.from('todos').select()
+
+// Update - only affects current user's rows
+await vibecode.from('todos').eq('id', todoId).update({ completed: true })
+
+// Delete - only affects current user's rows
+await vibecode.from('todos').eq('id', todoId).delete()
+```
+
+### Public vs User-Scoped Tables
+
+| Table Type | Has `user_id` Column | Behavior |
+|------------|---------------------|----------|
+| **User-Scoped** | ✅ Yes | Auto-filter/inject |
+| **Public** | ❌ No | No filtering |
+
+```typescript
+// User-scoped table
+const todos = vibecodeTable('todos', {
+  id: col.uuid().primaryKey(),
+  title: col.varchar().notNull(),
+  user_id: col.varchar().notNull(),  // ← User-scoped
+})
+
+// Public table
+const products = vibecodeTable('products', {
+  id: col.uuid().primaryKey(),
+  name: col.varchar().notNull(),
+  // No user_id = public data
+})
+```
+
+### Comparison with Supabase RLS
+
+| Feature | SQLite (Auto-Scoping) | Supabase (RLS) |
+|---------|----------------------|----------------|
+| Where | Client-side (executor) | Server-side (Postgres) |
+| Security | Trust-based | Enforced |
+| Configuration | Convention (`user_id` column) | SQL policies |
+| Bypass | N/A | Service role key |
+
+For SQLite, user scoping is for convenience during prototyping. For production with Supabase, use proper RLS policies.
+
 ## Supabase Auth (Production)
 
 ### What's Included
@@ -303,24 +403,20 @@ interface SignInCredentials {
 
 **`src/db/client.ts`**
 ```typescript
-import { vibecodeTable, col, references, defineSchema, createClient } from '@vibecode-db/client'
+import { vibecodeTable, col, defineSchema, createClient } from '@vibecode-db/client'
 import { SQLiteWebAdapter } from '@vibecode-db/sqlite-web'
 
-// Define schema
-export const users = vibecodeTable('users', {
-  id: col.integer().primaryKey().autoIncrement(),
-  name: col.varchar().notNull(),
-  email: col.varchar().unique().notNull(),
-})
-
+// Define schema - user_id references auth system, not a local table
 export const todos = vibecodeTable('todos', {
-  id: col.varchar().primaryKey(),
+  id: col.uuid().primaryKey(),
   title: col.varchar().notNull(),
   completed: col.boolean().default(false).notNull(),
-  user_id: references(col.integer('user_id').notNull(), () => users.id),
+  user_id: col.varchar().notNull(),  // References auth_users.id
+  created_at: col.timestamp().notNull().default(new Date()),
+  updated_at: col.timestamp().notNull().default(new Date()),
 })
 
-export const db = defineSchema({ users, todos })
+export const db = defineSchema({ todos })
 
 // Store adapter for auth to use
 export let dbAdapter: SQLiteWebAdapter | null = null

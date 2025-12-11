@@ -37,8 +37,11 @@ export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchem
   }
 
   private validateInsert(values: any | any[]) {
-    if (Array.isArray(values)) this.tableSchema.array().parse(values)
-    else this.tableSchema.parse(values)
+    // Use partial() for insert validation to allow auto-injectable fields (like user_id)
+    // The database constraints will still enforce required fields
+    const partialSchema = this.tableSchema.partial()
+    if (Array.isArray(values)) partialSchema.array().parse(values)
+    else partialSchema.parse(values)
   }
 
   private validateUpdate(patch: Record<string, unknown>) {

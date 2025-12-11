@@ -19,6 +19,7 @@ export interface SQLiteExpoAuthOptions extends SQLiteAuthOptions {
  * const dbAdapter = new SQLiteExpoAdapter(dbSpec, { dbName: 'myapp.db' })
  * const authAdapter = new SQLiteExpoAuthAdapter(dbAdapter, { jwtSecret: 'secret' })
  * 
+ * // User ID is always fetched from auth adapter's session (single source of truth)
  * const auth = createAuthClient({ authSpec: {}, adapter: () => authAdapter })
  * ```
  */
@@ -34,6 +35,7 @@ export class SQLiteExpoAuthAdapter extends BaseSQLiteAuthAdapter {
       options,
       authSpec
     )
+    // Register this auth adapter with the DB adapter
+    dbAdapter.setAuthAdapter(this)
   }
 }
-

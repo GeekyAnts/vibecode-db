@@ -19,14 +19,17 @@ type Todo = {
   id: string
   title: string
   completed: boolean
-  user_id: number
+  user_id: string
   created_at: string | Date
   updated_at: string | Date
-  users?: { name: string; email: string }
 }
 
 const which = import.meta.env.VITE_VIBECODE_ADAPTER as 'sqlite' | 'supabase' | 'custom'
 const adapterLabel = which === 'supabase' ? 'Supabase Adapter' : which === 'custom' ? 'Custom Adapter' : 'SQLite Adapter'
+
+// No manual user ID handling needed!
+// - SQLite: user_id is auto-injected on insert, auto-filtered on queries
+// - Supabase: RLS handles user_id via auth.uid()
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -54,6 +57,8 @@ export default function App() {
   }, [])
 
   // Load todos when user changes
+  // For SQLite: queries are auto-scoped to current user (like RLS!)
+  // For Supabase: RLS policies filter by auth.uid()
   useEffect(() => {
     if (!user) {
       setTodos([])
@@ -64,47 +69,11 @@ export default function App() {
 
       ; (async () => {
         try {
-          // Find user in users table by email (or create if needed)
-          const { data: usersData } = await vibecode
-            .from('users')
-            .eq('email', user.email)
-            .select('id, name, email')
-
-          let userId: number
-
-          if (usersData && Array.isArray(usersData) && usersData.length > 0) {
-            const id = usersData[0].id
-            userId = typeof id === 'number' ? id : parseInt(String(id), 10)
-          } else {
-            // Create user in users table
-            await vibecode
-              .from('users')
-              .insert({
-                name: user.name || user.email,
-                email: user.email,
-              })
-
-            // Re-fetch to get the ID
-            const { data: fetchedUser } = await vibecode
-              .from('users')
-              .eq('email', user.email)
-              .select('id')
-
-            if (fetchedUser && Array.isArray(fetchedUser) && fetchedUser.length > 0) {
-              const id = fetchedUser[0].id
-              userId = typeof id === 'number' ? id : parseInt(String(id), 10)
-            } else {
-              return
-            }
-          }
-
-          const projection = 'id, title, completed, user_id, created_at, updated_at, users(name, email)'
-
+          // No need to manually filter by user_id - it's automatic!
           const { data, error } = await vibecode
             .from('todos')
-            .eq('user_id', userId)
             .order('created_at', { ascending: false })
-            .select(projection)
+            .select('id, title, completed, user_id, created_at, updated_at')
 
           if (!isCancelled) {
             if (error) {
@@ -144,6 +113,12 @@ export default function App() {
     }
 
     if (data) {
+      // Check if email confirmation is required (Supabase)
+      if (!data.accessToken) {
+        setAuthError('Please check your email to verify your account before signing in.')
+        return
+      }
+      // User ID is automatically synced to dbAdapter by auth adapter!
       setUser(data.user)
       setEmail('')
       setPassword('')
@@ -174,6 +149,7 @@ export default function App() {
     }
 
     if (data) {
+      // User ID is automatically synced to dbAdapter by auth adapter!
       setUser(data.user)
       setEmail('')
       setPassword('')
@@ -181,6 +157,7 @@ export default function App() {
   }
 
   async function handleSignOut() {
+    // User ID is automatically cleared from dbAdapter by auth adapter!
     await auth.signOut()
     setUser(null)
     setTodos([])
@@ -189,45 +166,13 @@ export default function App() {
   async function addTodo() {
     if (!newTitle.trim() || !user) return
 
-    // Get or create user in users table
-    const { data: usersData } = await vibecode
-      .from('users')
-      .eq('email', user.email)
-      .select('id')
-
-    let userId: number
-
-    if (usersData && Array.isArray(usersData) && usersData.length > 0) {
-      const id = usersData[0].id
-      userId = typeof id === 'number' ? id : parseInt(String(id), 10)
-    } else {
-      await vibecode
-        .from('users')
-        .insert({
-          name: user.name || user.email,
-          email: user.email,
-        })
-
-      // Re-fetch to get the ID
-      const { data: fetchedUser } = await vibecode
-        .from('users')
-        .eq('email', user.email)
-        .select('id')
-
-      if (fetchedUser && Array.isArray(fetchedUser) && fetchedUser.length > 0) {
-        const id = fetchedUser[0].id
-        userId = typeof id === 'number' ? id : parseInt(String(id), 10)
-      } else {
-        return
-      }
-    }
-
     const now = new Date()
+    // No need to pass user_id - it's auto-injected for SQLite!
+    // For Supabase, RLS default can auto-fill it
     const payload = {
       id: crypto.randomUUID(),
       title: newTitle.trim(),
       completed: false,
-      user_id: userId,
       created_at: now,
       updated_at: now,
     }
@@ -240,12 +185,11 @@ export default function App() {
 
     setNewTitle('')
 
-    // Reload todos
+    // Reload todos (auto-filtered to current user!)
     const { data } = await vibecode
       .from('todos')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .select('id, title, completed, user_id, created_at, updated_at, users(name, email)')
+      .select('id, title, completed, user_id, created_at, updated_at')
     setTodos((data as Todo[]) ?? [])
   }
 
@@ -347,7 +291,9 @@ export default function App() {
             {adapterLabel}
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontSize: '0.9rem', color: '#666' }}>{user.email}</span>
+            <span style={{ fontSize: '0.9rem', color: '#666' }}>
+              {user.name ? `${user.name} (${user.email})` : user.email}
+            </span>
             <button className="vc-link" onClick={handleSignOut}>Sign Out</button>
           </div>
         </header>
@@ -369,27 +315,23 @@ export default function App() {
         {/* List */}
         <section className="vc-card">
           <ul className="vc-list">
-            {todos.map((t) => {
-              const owner = t.users?.name ?? user.name ?? 'Unknown'
-              return (
-                <li key={t.id} className="vc-row">
-                  <input
-                    type="checkbox"
-                    className="vc-checkbox"
-                    checked={!!t.completed}
-                    onChange={(e) => toggleTodo(t.id, e.target.checked)}
-                    aria-label="Toggle todo"
-                  />
-                  <div className="vc-row-text">
-                    <div className="vc-row-title" title={t.title}>{t.title}</div>
-                    <div className="vc-row-meta">by {owner}</div>
-                  </div>
-                  <button className="vc-link vc-delete" onClick={() => deleteTodo(t.id)}>
-                    Delete
-                  </button>
-                </li>
-              )
-            })}
+            {todos.map((t) => (
+              <li key={t.id} className="vc-row">
+                <input
+                  type="checkbox"
+                  className="vc-checkbox"
+                  checked={!!t.completed}
+                  onChange={(e) => toggleTodo(t.id, e.target.checked)}
+                  aria-label="Toggle todo"
+                />
+                <div className="vc-row-text">
+                  <div className="vc-row-title" title={t.title}>{t.title}</div>
+                </div>
+                <button className="vc-link vc-delete" onClick={() => deleteTodo(t.id)}>
+                  Delete
+                </button>
+              </li>
+            ))}
 
             {!todos.length && (
               <li className="vc-empty">No todos yet. Add one above!</li>

@@ -36,7 +36,7 @@ export interface AuthSpec {
 export class BaseSQLiteAuthAdapter {
   protected executor: SQLiteAuthExecutor
   protected ready: Promise<void>
-  
+
   // In-memory session for current user (prototyping only)
   private currentSession: Session | null = null
 
@@ -91,6 +91,14 @@ export class BaseSQLiteAuthAdapter {
 
   private async ensureReady(): Promise<void> {
     await this.ready
+  }
+
+  /**
+   * Get the current user ID (sync) - single source of truth
+   * Used by DB adapter for auto user-scoping
+   */
+  getCurrentUserId(): string | null {
+    return this.currentSession?.user?.id ?? null
   }
 
   /**
