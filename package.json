@@ -12,6 +12,9 @@
     "dev": "npm run build:packages && concurrently -n client,core,web,expo,todo -c blue,green,yellow,magenta,cyan \"npm run dev -w @vibecode-db/client\" \"npm run dev -w @vibecode-db/sqlite-core\" \"npm run dev -w @vibecode-db/sqlite-web\" \"npm run dev -w @vibecode-db/sqlite-expo\" \"npm run dev -w vibecode-todo\"",
     "dev:packages": "concurrently -n client,core,web,expo -c blue,green,yellow,magenta \"npm run dev -w @vibecode-db/client\" \"npm run dev -w @vibecode-db/sqlite-core\" \"npm run dev -w @vibecode-db/sqlite-web\" \"npm run dev -w @vibecode-db/sqlite-expo\"",
     "dev:todo": "npm run dev -w vibecode-todo",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "changeset": "changeset",
     "release:version": "changeset version",
     "release:publish": "npm run build && changeset publish"
