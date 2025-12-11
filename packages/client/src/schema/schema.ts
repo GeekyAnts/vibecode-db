@@ -56,7 +56,7 @@ function columnToZod(col: ColumnDescriptor): z.ZodTypeAny {
  * Returns the target table, the internal column key, the exposed column name,
  * and the full ColumnDescriptor so callers can adopt type info and register relations.
  */
-export function resolveTarget(
+function resolveTarget(
   tables: Record<string, TableDef> | TableDef[],
   ref: ColumnRef
 ): {
