@@ -1,6 +1,6 @@
 {
     "name": "@vibecode-db/sqlite-expo",
-    "version": "2.3.0",
+    "version": "2.4.0",
     "type": "module",
     "description": "Expo/React-Native SQLite adapter using expo-sqlite",
     "main": "dist/index.cjs",
@@ -15,7 +15,7 @@
         "expo-sqlite": "^16.0.8"
     },
     "dependencies": {
-        "@vibecode-db/sqlite-core": "2.3.0"
+        "@vibecode-db/sqlite-core": "2.4.0"
     },
     "exports": {
         ".": {
