@@ -1,5 +1,16 @@
 # @vibecode-db/sqlite-core
 
+## 2.3.0
+
+### Minor Changes
+
+- Added authentication in vibecode-db.
+
+### Patch Changes
+
+- Updated dependencies
+  - @vibecode-db/client@2.3.0
+
 ## 2.2.0
 
 ### Minor Changes

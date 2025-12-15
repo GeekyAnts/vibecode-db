@@ -1,5 +1,11 @@
 # @vibecode-db/client
 
+## 2.3.0
+
+### Minor Changes
+
+- Added authentication in vibecode-db.
+
 ## 2.1.0
 
 ### Minor Changes
