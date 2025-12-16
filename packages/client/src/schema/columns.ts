@@ -13,9 +13,9 @@ export class ColumnBuilder {
     // Private constraint properties to avoid naming conflicts with methods
     private _primaryKey?: boolean
     private _notNull?: boolean
+    private _nullable?: boolean
     private _unique?: boolean
     private _autoIncrement?: boolean
-    private _defaultValue?: any
     private _onDelete?: FKAction
     private _onUpdate?: FKAction
     private _index?: boolean
@@ -30,9 +30,9 @@ export class ColumnBuilder {
             this.references = extras.references
             this._primaryKey = extras.primaryKey
             this._notNull = extras.notNull
+            this._nullable = extras.nullable
             this._unique = extras.unique
             this._autoIncrement = extras.autoIncrement
-            this._defaultValue = extras.defaultValue
             this._onDelete = extras.onDelete
             this._onUpdate = extras.onUpdate
             this._index = extras.index
@@ -51,10 +51,25 @@ export class ColumnBuilder {
     }
 
     /**
-     * Mark this column as NOT NULL.
+     * Mark this column as NOT NULL (required field).
+     * The field must be provided when inserting/updating.
      */
     notNull(): this {
         this._notNull = true
+        this._nullable = false // Mutually exclusive
+        return this
+    }
+
+    /**
+     * Mark this column as NULLABLE (can explicitly be null).
+     * The field is optional and can be set to null.
+     * 
+     * @example
+     * col.varchar().nullable() // Can be omitted OR set to null
+     */
+    nullable(): this {
+        this._nullable = true
+        this._notNull = false // Mutually exclusive
         return this
     }
 
@@ -75,15 +90,6 @@ export class ColumnBuilder {
             throw new Error('autoIncrement() can only be applied to integer columns')
         }
         this._autoIncrement = true
-        return this
-    }
-
-    /**
-     * Set a DEFAULT value for this column.
-     * @param value The default value (type should match column kind)
-     */
-    default(value: any): this {
-        this._defaultValue = value
         return this
     }
 
@@ -148,9 +154,9 @@ export class ColumnBuilder {
             references: this.references,
             primaryKey: this._primaryKey,
             notNull: this._notNull,
+            nullable: this._nullable,
             unique: this._unique,
             autoIncrement: this._autoIncrement,
-            defaultValue: this._defaultValue,
             onDelete: this._onDelete,
             onUpdate: this._onUpdate,
             index: this._index,

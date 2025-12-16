@@ -1,13 +1,13 @@
 import { ColumnDescriptor } from '../schema/types'
 import { ColumnBuilder } from '../schema/columns'
 import { mapColumnKindToSQLiteType } from './typeMapping'
-import { quoteIdentifier, formatDefaultValue } from './utils'
+import { quoteIdentifier } from './utils'
 
 /**
  * Generate a column definition for SQLite CREATE TABLE.
  *
  * Format:
- * "column_name" TYPE [PRIMARY KEY] [AUTOINCREMENT] [NOT NULL] [UNIQUE] [DEFAULT value]
+ * "column_name" TYPE [PRIMARY KEY] [AUTOINCREMENT] [NOT NULL] [UNIQUE]
  *
  * @param columnName - The exposed column name
  * @param colInput - The column descriptor or builder
@@ -45,11 +45,6 @@ export function generateColumnDefinition(
     // UNIQUE (unless it's a primary key, which is implicitly UNIQUE)
     if (col.unique && !col.primaryKey) {
         parts.push('UNIQUE')
-    }
-
-    // DEFAULT value
-    if (col.defaultValue !== undefined) {
-        parts.push(`DEFAULT ${formatDefaultValue(col.defaultValue)}`)
     }
 
     return parts.join(' ')

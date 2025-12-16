@@ -29,10 +29,10 @@ export interface ColumnDescriptor {
 
     // Constraints
     primaryKey?: boolean     // PRIMARY KEY constraint
-    notNull?: boolean        // NOT NULL constraint
+    notNull?: boolean        // NOT NULL constraint (field must be provided)
+    nullable?: boolean       // NULLABLE constraint (field can be explicitly null)
     unique?: boolean         // UNIQUE constraint
     autoIncrement?: boolean  // AUTO INCREMENT (integer only)
-    defaultValue?: any       // DEFAULT value
 
     // Foreign key actions
     onDelete?: FKAction      // ON DELETE action for foreign keys

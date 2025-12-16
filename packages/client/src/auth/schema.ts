@@ -10,8 +10,8 @@ export const authUsers = vibecodeTable('auth_users', {
   email: col.varchar().unique().notNull().comment('User email address'),
   passwordHash: col.varchar().notNull().comment('Hashed password'),
   name: col.varchar().comment('User full name'),
-  createdAt: col.timestamp().notNull().default(new Date()).comment('Account creation timestamp'),
-  updatedAt: col.timestamp().notNull().default(new Date()).comment('Last update timestamp'),
+  createdAt: col.timestamp().notNull().comment('Account creation timestamp'),
+  updatedAt: col.timestamp().notNull().comment('Last update timestamp'),
 })
 
 /**

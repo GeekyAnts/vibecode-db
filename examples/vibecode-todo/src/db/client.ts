@@ -6,7 +6,7 @@ import { SQLiteWebAdapter, type SQLiteWebAdapterOptions } from '@vibecode-db/sql
 export const todos = vibecodeTable('todos', {
   id: col.varchar().primaryKey().comment('Unique todo identifier (UUID)'),
   title: col.varchar({ length: 256 }).notNull().comment('Todo title'),
-  completed: col.boolean().default(false).notNull().comment('Completion status'),
+  completed: col.boolean().notNull().comment('Completion status'),
   created_at: col.timestamp().notNull().index().comment('Creation timestamp'),
   updated_at: col.timestamp().notNull().comment('Last update timestamp'),
   user_id: col.varchar().notNull().index().comment('Auth user ID (UUID)'),

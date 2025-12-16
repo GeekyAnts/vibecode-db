@@ -1,53 +1,88 @@
 import { z } from 'zod'
-import { ColumnDescriptor, ColumnKind, ColumnRef, DefinedSchema, TableDef } from './types'
+import type { ColumnDescriptor, ColumnKind, ColumnRef, DefinedSchema, TableDef } from './types'
 import { RelationIndex } from '../core/types'
 import { ColumnBuilder } from './columns'
 import { generateMigrations } from '../ddl/generateDDL'
 
 /**
  * Build a Zod type for a column, applying constraints.
+ * 
+ * ## Constraint Semantics (for INSERT validation):
+ * 
+ * Follows SQL semantics where columns WITHOUT `NOT NULL` can store NULL.
+ * 
+ * | Constraint                      | Required? | Nullable? | Zod Result                         |
+ * |---------------------------------|-----------|-----------|-----------------------------------|
+ * | No constraints                  | NO        | YES       | `z.string().nullable().optional()` |
+ * | `nullable()`                    | NO        | YES       | `z.string().nullable().optional()` |
+ * | `notNull()` only                | YES       | NO        | `z.string()`                       |
+ * | `primaryKey()` only             | YES       | NO        | `z.string()`                       |
+ * | `primaryKey().autoIncrement()`  | NO        | NO        | `z.number().optional()`            |
+ * 
+ * Key insights:
+ * - SQL columns are nullable by default (without NOT NULL)
+ * - `notNull()` makes a field required AND non-nullable
+ * - `autoIncrement()` makes a field optional (DB generates value)
  *
  * @param col - The column descriptor with constraints
  * @returns A Zod type with appropriate constraints applied
  */
 function columnToZod(col: ColumnDescriptor): z.ZodTypeAny {
-  // Get base Zod type by kind
-  let zodType: z.ZodTypeAny
+  // Step 1: Get base Zod type by column kind
+  let zodType: z.ZodTypeAny = getBaseZodType(col.kind, col.enumValues)
 
-  switch (col.kind) {
-    case 'integer': zodType = z.number(); break
-    case 'varchar': zodType = z.string(); break // length kept as metadata for now
-    case 'boolean': zodType = z.boolean(); break
-    case 'timestamp': zodType = z.date(); break
-    case 'uuid': zodType = z.string().uuid(); break
-    case 'json': zodType = z.unknown(); break
-    case 'enum':
-      if (!col.enumValues || col.enumValues.length === 0) {
-        zodType = z.string()
-      } else {
-        zodType = z.enum(col.enumValues as [string, ...string[]])
-      }
-      break
-    default: zodType = z.unknown()
-  }
-
-  // Apply default value if specified
-  if (col.defaultValue !== undefined) {
-    zodType = zodType.default(col.defaultValue)
-  }
-
-  // Apply nullability
-  // - Auto-increment fields are always optional (DB generates them)
-  // - If notNull is explicitly true OR primaryKey is true, field is required
-  // - Otherwise, field is optional (nullable)
+  // Step 2: Analyze constraints
+  const hasNotNull = col.notNull === true
   const isAutoIncrement = col.autoIncrement === true
-  const isRequired = !isAutoIncrement && (col.notNull === true || col.primaryKey === true)
 
+  // Step 3: Determine nullability and requirement
+  // NULLABILITY: In SQL, columns are nullable by default unless NOT NULL is specified
+  // REQUIREMENT: A field is required ONLY if it has notNull and is NOT auto-increment
+  const isNullable = !hasNotNull
+  const isRequired = hasNotNull && !isAutoIncrement
+
+  // Step 4: Apply constraints in order
+
+  // If nullable (SQL default), wrap with .nullable()
+  if (isNullable) {
+    zodType = zodType.nullable()
+  }
+
+  // If not required, wrap with .optional()
   if (!isRequired) {
     zodType = zodType.optional()
   }
 
   return zodType
+}
+
+/**
+ * Get the base Zod type for a column kind (without constraints).
+ */
+function getBaseZodType(kind: ColumnKind, enumValues?: readonly string[]): z.ZodTypeAny {
+  switch (kind) {
+    case 'integer':
+      return z.number().int()
+    case 'varchar':
+      return z.string()
+    case 'boolean':
+      return z.boolean()
+    case 'timestamp':
+      // Accept both Date objects and ISO strings
+      return z.union([z.date(), z.string().datetime({ offset: true }).pipe(z.coerce.date())])
+        .or(z.string()) // Also accept plain strings for flexibility
+    case 'uuid':
+      return z.string().uuid()
+    case 'json':
+      return z.unknown()
+    case 'enum':
+      if (!enumValues || enumValues.length === 0) {
+        return z.string()
+      }
+      return z.enum(enumValues as [string, ...string[]])
+    default:
+      return z.unknown()
+  }
 }
 
 /**
@@ -139,9 +174,9 @@ export function defineSchema(tablesRecord: Record<string, TableDef>): DefinedSch
           kind: target.kind,
           enumValues: target.enumValues,
           length: target.length,
-          // Preserve local constraints (notNull, default, etc.)
+          // Preserve local constraints (notNull, nullable, etc.)
           notNull: col.notNull,
-          defaultValue: col.defaultValue,
+          nullable: col.nullable,
           primaryKey: col.primaryKey,
           unique: col.unique,
           autoIncrement: col.autoIncrement,

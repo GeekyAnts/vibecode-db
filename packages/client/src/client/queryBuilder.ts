@@ -36,12 +36,17 @@ export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchem
     }
   }
 
+  /**
+   * Validate insert values against schema.
+   * Uses partial() to allow auto-injectable fields (like user_id).
+   */
   private validateInsert(values: any | any[]) {
-    // Use partial() for insert validation to allow auto-injectable fields (like user_id)
-    // The database constraints will still enforce required fields
     const partialSchema = this.tableSchema.partial()
-    if (Array.isArray(values)) partialSchema.array().parse(values)
-    else partialSchema.parse(values)
+    if (Array.isArray(values)) {
+      partialSchema.array().parse(values)
+    } else {
+      partialSchema.parse(values)
+    }
   }
 
   private validateUpdate(patch: Record<string, unknown>) {
@@ -65,11 +70,9 @@ export class QueryBuilder<S extends z.ZodRawShape, TName extends TablesFromSchem
   }
 
   insert<T = RowFromSchema<S, TName>>(values: T | T[]): MutateResult<T | T[]> {
-    // Validate payload against table schema
+    // Validate against schema (checks notNull, nullable constraints)
     this.validateInsert(values)
-
     const out = this.exec.insert(values)
-    // inserts don't consume filters/order, but to be safe:
     this.reset()
     return out
   }
