@@ -1,22 +1,26 @@
 import type { z } from 'zod'
-import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { getOrCreateClient, getSupabaseStorageKey } from './clientRegistry'
+import { SupabaseAuthExecutor } from './authExecutor'
+
+// Export helper for getting storage key
+export { getSupabaseStorageKey }
+
 import type {
   AdapterTableExecutor,
-  DatabaseAdapter,
-  FilterOp,
-  OrderSpec,
+  UnifiedAdapter,
   QueryState,
-  DBSpec
+  DBSpec,
+  AuthExecutor,
+  UnifiedAdapterFactory,
 } from '../../core/types'
 
 class SupabaseTableExecutor implements AdapterTableExecutor {
-
   constructor(
     private table: string,
     private sb: SupabaseClient,
     private ready: Promise<void>
-  ) { }
-
+  ) {}
 
   private applyFilters(query: any, state: QueryState) {
     for (const f of state.filters) {
@@ -74,40 +78,89 @@ class SupabaseTableExecutor implements AdapterTableExecutor {
     const { data, error } = await q
     return { data: (data as any) ?? null, error: (error as any) ?? null }
   }
-
-
 }
 
-export type SupabaseAdapterOptions = { url: string; key: string }
+/**
+ * Supabase adapter options
+ */
+export type SupabaseAdapterOptions = {
+  /** Supabase project URL */
+  url: string
+  /** Supabase anon/public key */
+  key: string
+  /**
+   * Optional auth configuration.
+   * If provided, client.auth will be available.
+   * If omitted, client.auth will throw helpful error.
+   */
+  auth?: {
+    /** Storage for session persistence (e.g., AsyncStorage for React Native) */
+    storage?: any
+  }
+} | {
+  /** Existing SupabaseClient instance */
+  client: SupabaseClient
+  /** Enable auth on the client */
+  auth?: { enabled: true }
+}
 
 /**
- * SupabaseAdapter — production-ready adapter for Supabase/PostgREST.
+ * SupabaseAdapter — unified adapter for Supabase (database + auth).
  *
  * @public
  * @param dbSpec - Your DBSpec (schema + optional seed/meta). Seed rows are validated and upserted once at startup.
- * @param opts - Supabase project URL and anon/public key.
+ * @param opts - Supabase project URL/key OR an existing SupabaseClient instance.
+ *
+ * @remarks
+ * The adapter uses a client registry to share the same SupabaseClient instance
+ * for both database and auth operations, ensuring session sharing automatically.
  *
  * @example
  * ```ts
- * const vibecode = createClient({
- *   dbSpec: { schema: DBSchema },
- *   adapter: (ctx) => new SupabaseAdapter(ctx, { url: SUPABASE_URL, key: SUPABASE_ANON })
+ * const client = createClient({
+ *   dbSpec,
+ *   adapter: supabaseAdapter({
+ *     url: SUPABASE_URL,
+ *     key: SUPABASE_KEY,
+ *     auth: { storage: AsyncStorage } // Optional: for React Native
+ *   })
  * })
- * const { data } = await vibecode.from('posts').eq('published', true).order('created_at', { ascending: false }).select('*')
+ *
+ * // Database operations
+ * const { data } = await client.from('users').select('*')
+ *
+ * // Auth operations
+ * await client.auth.signIn({ email, password })
  * ```
  */
-export class SupabaseAdapter implements DatabaseAdapter {
+export class SupabaseAdapter implements UnifiedAdapter {
   private sb: SupabaseClient
   private ready: Promise<void>
+  private _auth: SupabaseAuthExecutor | undefined
 
   constructor(
-    private dbSpec: DBSpec<any>,            // <-- use DBSpec (schema + seed + meta)
-    opts: SupabaseAdapterOptions
+    private dbSpec: DBSpec<any>,
+    private opts: SupabaseAdapterOptions
   ) {
-    this.sb = createSupabaseClient(opts.url, opts.key)
+    // Use provided client or get/create from registry
+    if ('client' in opts) {
+      this.sb = opts.client
+      // If auth is enabled with existing client
+      if (opts.auth?.enabled) {
+        this._auth = new SupabaseAuthExecutor(this.sb)
+      }
+    } else {
+      // Use registry to ensure session sharing
+      const storage = opts.auth?.storage
+      this.sb = getOrCreateClient(opts.url, opts.key, storage)
+      // Enable auth if auth config is provided
+      if (opts.auth) {
+        this._auth = new SupabaseAuthExecutor(this.sb)
+      }
+    }
+
     // Kick off seeding immediately; table operations await this.ready
     this.ready = this.seedIfAny().catch((e) => {
-      // Surface seeding errors later when operations await `ready`
       throw e
     })
   }
@@ -119,13 +172,20 @@ export class SupabaseAdapter implements DatabaseAdapter {
   }
 
   /**
+   * Auth executor (undefined if auth not configured)
+   */
+  get auth(): AuthExecutor | undefined {
+    return this._auth
+  }
+
+  /**
    * Validate and insert seed rows per table once.
    * Uses upsert to avoid conflicts on reruns (assumes primary keys exist).
    */
   private async seedIfAny(): Promise<void> {
     const seed = this.dbSpec.seed
     if (!seed) return
-    // Iterate seed tables deterministically
+
     for (const table of Object.keys(seed)) {
       const rows = (seed as Record<string, any[]>)[table]
       if (!Array.isArray(rows) || rows.length === 0) continue
@@ -137,9 +197,32 @@ export class SupabaseAdapter implements DatabaseAdapter {
       ts.array().parse(rows)
 
       // Insert (upsert to avoid duplicate key errors on repeated runs)
-      // Note: Upsert infers conflict target from primary key.
       const { error } = await this.sb.from(table).upsert(rows).select('*')
       if (error) throw error
     }
+  }
+}
+
+/**
+ * Factory function for creating Supabase adapter.
+ *
+ * @param opts - Supabase configuration options
+ * @returns Adapter factory function for use with createClient
+ *
+ * @example
+ * ```ts
+ * const client = createClient({
+ *   dbSpec,
+ *   adapter: supabaseAdapter({
+ *     url: SUPABASE_URL,
+ *     key: SUPABASE_KEY,
+ *     auth: { storage: AsyncStorage }
+ *   })
+ * })
+ * ```
+ */
+export function supabaseAdapter(opts: SupabaseAdapterOptions): UnifiedAdapterFactory<any> {
+  return <S extends z.ZodRawShape>(dbSpec: DBSpec<S>): UnifiedAdapter => {
+    return new SupabaseAdapter(dbSpec, opts)
   }
 }

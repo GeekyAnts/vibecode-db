@@ -1,4 +1,15 @@
 import type { z } from 'zod'
+import type {
+    AuthResult,
+    Session,
+    User,
+    SignUpCredentials,
+    SignInCredentials,
+    ResetPasswordRequest,
+    ResetPasswordConfirm,
+    ChangePasswordRequest,
+    UpdateUserProfile,
+} from '../auth/types'
 
 export type TablesFromSchema<S extends z.ZodRawShape> = keyof S & string
 
@@ -104,10 +115,48 @@ export type DBSpec<S extends z.ZodRawShape> = {
 }
 
 /**
- * Adapter factory MUST be a callback that receives DBSpec (not an instance).
- * (We keep DatabaseAdapter/AdapterTableExecutor contracts as-is.)
+ * Auth executor interface - handles all authentication operations.
+ * Implemented by adapter-specific auth classes (Supabase, SQLite, etc.)
+ */
+export interface AuthExecutor {
+    signUp(credentials: SignUpCredentials): AuthResult<Session>
+    signIn(credentials: SignInCredentials): AuthResult<Session>
+    signOut(): AuthResult<void>
+    getSession(): AuthResult<Session | null>
+    refreshSession(refreshToken?: string): AuthResult<Session>
+    resetPassword(request: ResetPasswordRequest): AuthResult<void>
+    resetPasswordConfirm(confirm: ResetPasswordConfirm): AuthResult<Session>
+    changePassword(request: ChangePasswordRequest): AuthResult<void>
+    updateUser(updates: UpdateUserProfile): AuthResult<User>
+    getUser(): AuthResult<User | null>
+}
+
+/**
+ * Unified adapter interface that combines DB and optional Auth capabilities.
+ * All adapters (Supabase, SQLite-web, SQLite-expo) implement this interface.
+ */
+export interface UnifiedAdapter {
+    /** Database operations - get a table executor */
+    from(table: string): AdapterTableExecutor
+
+    /** Auth executor (undefined if auth not configured) */
+    auth?: AuthExecutor
+}
+
+/**
+ * Unified adapter factory - receives DBSpec and returns adapter with optional auth.
+ */
+export type UnifiedAdapterFactory<S extends z.ZodRawShape> = (dbSpec: DBSpec<S>) => UnifiedAdapter
+
+/**
+ * @deprecated Use UnifiedAdapterFactory instead
  */
 export type AdapterFactory<S extends z.ZodRawShape> = (dbSpec: DBSpec<S>) => DatabaseAdapter
 
-
-export type CreateClientOptions<S extends z.ZodRawShape> = { dbSpec: DBSpec<S>; adapter: AdapterFactory<S> }
+/**
+ * Options for createClient()
+ */
+export type CreateClientOptions<S extends z.ZodRawShape> = {
+    dbSpec: DBSpec<S>
+    adapter: UnifiedAdapterFactory<S>
+}

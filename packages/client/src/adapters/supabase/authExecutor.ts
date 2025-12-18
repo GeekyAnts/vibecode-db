@@ -1,44 +1,24 @@
-import type { AuthAdapter, AuthSpec, SignUpCredentials, SignInCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, UpdateUserProfile, Session, User } from '../../types'
-import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { AuthExecutor } from '../../core/types'
+import type {
+  SignUpCredentials,
+  SignInCredentials,
+  ResetPasswordRequest,
+  ResetPasswordConfirm,
+  ChangePasswordRequest,
+  UpdateUserProfile,
+  Session,
+  User,
+} from '../../auth/types'
 
 /**
- * Supabase auth adapter options
+ * Supabase auth executor - handles all authentication operations via Supabase Auth
  */
-export interface SupabaseAuthAdapterOptions {
-  url: string
-  key: string
-}
-
-/**
- * Supabase auth adapter - uses Supabase's built-in auth
- */
-export class SupabaseAuthAdapter implements AuthAdapter {
-  private sb: SupabaseClient
-  private ready: Promise<void>
-
-  constructor(
-    private authSpec: AuthSpec,
-    options: SupabaseAuthAdapterOptions
-  ) {
-    this.sb = createSupabaseClient(options.url, options.key)
-    this.ready = this.init()
-  }
-
-  private async init(): Promise<void> {
-    // Supabase handles schema and migrations automatically
-    // We can optionally seed users here if needed
-    // For now, just ensure client is ready
-    await Promise.resolve()
-  }
-
-  private async ensureReady(): Promise<void> {
-    await this.ready
-  }
+export class SupabaseAuthExecutor implements AuthExecutor {
+  constructor(private sb: SupabaseClient) {}
 
   async signUp(credentials: SignUpCredentials): Promise<{ data: Session | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.signUp({
         email: credentials.email,
         password: credentials.password,
@@ -59,12 +39,11 @@ export class SupabaseAuthAdapter implements AuthAdapter {
       }
 
       // When email confirmation is enabled, session is null until user verifies email
-      // Return a partial session with just the user info
       if (!data.session) {
         return {
           data: {
             user: this.mapSupabaseUser(data.user),
-            accessToken: '', // No token until email is verified
+            accessToken: '',
           },
           error: null,
         }
@@ -87,15 +66,12 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async signIn(credentials: SignInCredentials): Promise<{ data: Session | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       })
 
       if (error) {
-        console.log('sign in error', error)
         return { data: null, error }
       }
 
@@ -120,13 +96,10 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async signOut(): Promise<{ data: void | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { error } = await this.sb.auth.signOut()
       if (error) {
         return { data: null, error }
       }
-
       return { data: undefined, error: null }
     } catch (error) {
       return { data: null, error: error as Error }
@@ -135,8 +108,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async getSession(): Promise<{ data: Session | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.getSession()
       if (error) {
         return { data: null, error }
@@ -161,10 +132,8 @@ export class SupabaseAuthAdapter implements AuthAdapter {
     }
   }
 
-  async refreshSession(refreshToken?: string): Promise<{ data: Session | null; error: Error | null }> {
+  async refreshSession(_refreshToken?: string): Promise<{ data: Session | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.refreshSession()
       if (error) {
         return { data: null, error }
@@ -191,9 +160,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async resetPassword(request: ResetPasswordRequest): Promise<{ data: void | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
-      // Get redirect URL - works in browser, fallback for Node.js
       const redirectTo = typeof window !== 'undefined'
         ? `${window.location.origin}/reset-password`
         : 'http://localhost:3000/reset-password'
@@ -214,11 +180,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async resetPasswordConfirm(confirm: ResetPasswordConfirm): Promise<{ data: Session | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
-      // Supabase handles password reset via email link
-      // The token is embedded in the URL, so we need to extract it
-      // For now, we'll use updateUser to change password
       const { data: sessionData } = await this.sb.auth.getSession()
       if (!sessionData.session) {
         return { data: null, error: new Error('No active session') }
@@ -232,7 +193,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
         return { data: null, error }
       }
 
-      // Get updated session
       return await this.getSession()
     } catch (error) {
       return { data: null, error: error as Error }
@@ -241,10 +201,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async changePassword(request: ChangePasswordRequest): Promise<{ data: void | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
-      // Supabase doesn't require current password for change
-      // It uses the session token for verification
       const { error } = await this.sb.auth.updateUser({
         password: request.newPassword,
       })
@@ -261,8 +217,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async updateUser(updates: UpdateUserProfile): Promise<{ data: User | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.updateUser({
         data: {
           name: updates.name,
@@ -290,8 +244,6 @@ export class SupabaseAuthAdapter implements AuthAdapter {
 
   async getUser(): Promise<{ data: User | null; error: Error | null }> {
     try {
-      await this.ensureReady()
-
       const { data, error } = await this.sb.auth.getUser()
       if (error) {
         return { data: null, error }
@@ -323,4 +275,3 @@ export class SupabaseAuthAdapter implements AuthAdapter {
     }
   }
 }
-

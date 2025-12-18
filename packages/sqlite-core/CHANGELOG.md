@@ -1,5 +1,12 @@
 # @vibecode-db/sqlite-core
 
+## 2.5.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @vibecode-db/client@2.5.0
+
 ## 2.4.0
 
 ### Minor Changes

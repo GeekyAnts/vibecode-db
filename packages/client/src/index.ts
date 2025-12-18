@@ -1,3 +1,4 @@
+// Client
 export * from './client/createClient'
 export * from './core/types'
 export * from './schema'
@@ -10,6 +11,16 @@ export * from './ddl/generateDDL'
 export * from './adapters/supabase'
 export * from './adapters/custom'
 
-// Auth
+// Auth types (for use with client.auth)
 export * from './auth'
-export type { Session, User, SignUpCredentials, SignInCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, UpdateUserProfile } from './auth/types'
+export type {
+  Session,
+  User,
+  SignUpCredentials,
+  SignInCredentials,
+  ResetPasswordRequest,
+  ResetPasswordConfirm,
+  ChangePasswordRequest,
+  UpdateUserProfile,
+  AuthResult,
+} from './auth/types'

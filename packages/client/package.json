@@ -1,6 +1,6 @@
 {
     "name": "@vibecode-db/client",
-    "version": "2.3.0",
+    "version": "2.5.0",
     "description": "Core Vibecode DB client + Supabase adapter",
     "license": "MIT",
     "type": "module",
@@ -34,7 +34,13 @@
         "./package.json": "./package.json"
     },
     "peerDependencies": {
-        "@supabase/supabase-js": "^2.57.4"
+        "@supabase/supabase-js": "^2.57.4",
+        "@react-native-async-storage/async-storage": "^1.0.0"
+    },
+    "peerDependenciesMeta": {
+        "@react-native-async-storage/async-storage": {
+            "optional": true
+        }
     },
     "dependencies": {
         "zod": "^4.1.11"

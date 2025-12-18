@@ -81,6 +81,7 @@ export interface UpdateUserProfile {
 }
 
 /**
+ * @deprecated Use AuthExecutor from core/types.ts instead
  * Auth adapter interface - similar to DatabaseAdapter
  */
 export interface AuthAdapter {

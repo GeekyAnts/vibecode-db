@@ -1,6 +1,6 @@
 {
     "name": "@vibecode-db/sqlite-core",
-    "version": "2.4.0",
+    "version": "2.5.0",
     "type": "module",
     "main": "dist/index.cjs",
     "module": "dist/index.mjs",
@@ -19,16 +19,17 @@
         }
     },
     "dependencies": {
-        "@vibecode-db/client": "2.3.0"
+        "@react-native-async-storage/async-storage": "^2.2.0",
+        "@vibecode-db/client": "2.5.0"
     },
     "devDependencies": {
-        "tsup": "^8.5.0",
-        "typescript": "^5.9.2",
         "@typescript-eslint/eslint-plugin": "^8.44.1",
         "@typescript-eslint/parser": "^8.44.1",
         "eslint": "^9.36.0",
         "eslint-config-prettier": "^10.1.8",
         "prettier": "^3.6.2",
+        "tsup": "^8.5.0",
+        "typescript": "^5.9.2",
         "vitest": "^3.2.4"
     },
     "scripts": {

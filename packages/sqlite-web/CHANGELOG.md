@@ -1,5 +1,11 @@
 # @vibecode-db/sqlite-web
 
+## 2.5.0
+
+### Patch Changes
+
+- @vibecode-db/sqlite-core@2.5.0
+
 ## 2.4.0
 
 ### Patch Changes

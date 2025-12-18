@@ -1,17 +1,17 @@
-import type { DBSpec, DatabaseAdapter, AdapterTableExecutor } from '@vibecode-db/client'
+import type { DBSpec, UnifiedAdapter, AdapterTableExecutor, AuthExecutor } from '@vibecode-db/client'
 import { SQLiteTableExecutor } from './executor'
 import type { SqlDriver } from './driver'
 import { applyPragmasAndMigrations, seedDatabase } from './utils'
 import { BaseSQLiteAdapterOptions } from './types'
-import type { BaseSQLiteAuthAdapter } from '../auth/base-adapter'
+import type { SQLiteAuthExecutor } from '../auth/sqlite-auth-executor'
 
 
-export abstract class BaseSQLiteAdapter implements DatabaseAdapter {
+export abstract class BaseSQLiteAdapter implements UnifiedAdapter {
     protected driver!: SqlDriver
     protected ready!: Promise<void>
 
-    // Reference to auth adapter (single source of truth for user ID)
-    private authAdapter: BaseSQLiteAuthAdapter | null = null
+    // Reference to auth executor (single source of truth for user ID)
+    private authExecutor: SQLiteAuthExecutor | null = null
 
     constructor(protected dbSpec: DBSpec<any>, protected opts: BaseSQLiteAdapterOptions) {
     }
@@ -54,19 +54,26 @@ export abstract class BaseSQLiteAdapter implements DatabaseAdapter {
     }
 
     /**
-     * Set the auth adapter reference
-     * Called automatically by platform-specific auth adapters
+     * Set the auth executor reference
+     * Called automatically by platform-specific adapters
      * @internal
      */
-    setAuthAdapter(authAdapter: BaseSQLiteAuthAdapter): void {
-        this.authAdapter = authAdapter
+    setAuthExecutor(authExecutor: SQLiteAuthExecutor): void {
+        this.authExecutor = authExecutor
     }
 
     /**
      * Get the current authenticated user ID
-     * Gets it from the auth adapter's session (single source of truth)
+     * Gets it from the auth executor's session (single source of truth)
      */
     getCurrentUserId(): string | null {
-        return this.authAdapter?.getCurrentUserId() ?? null
+        return this.authExecutor?.getCurrentUserId() ?? null
+    }
+
+    /**
+     * Auth executor (undefined if auth not configured)
+     */
+    get auth(): AuthExecutor | undefined {
+        return this.authExecutor ?? undefined
     }
 }

@@ -1,7 +1,6 @@
 // examples/todo-vite/src/App.tsx
 import { useEffect, useState } from 'react'
 import { vibecode } from './db/client'
-import { auth } from './auth/client'
 // Import User type from auth types
 type User = {
   id: string
@@ -48,7 +47,7 @@ export default function App() {
   // Load session on mount
   useEffect(() => {
     ; (async () => {
-      const { data } = await auth.getSession()
+      const { data } = await vibecode.auth.getSession()
       if (data) {
         setUser(data.user)
       }
@@ -99,7 +98,7 @@ export default function App() {
     setIsSigningUp(true)
     setAuthError(null)
 
-    const { data, error } = await auth.signUp({
+    const { data, error } = await vibecode.auth.signUp({
       email,
       password,
       name: name || undefined,
@@ -136,7 +135,7 @@ export default function App() {
     setIsSigningIn(true)
     setAuthError(null)
 
-    const { data, error } = await auth.signIn({
+    const { data, error } = await vibecode.auth.signIn({
       email,
       password,
     })
@@ -158,7 +157,7 @@ export default function App() {
 
   async function handleSignOut() {
     // User ID is automatically cleared from dbAdapter by auth adapter!
-    await auth.signOut()
+    await vibecode.auth.signOut()
     setUser(null)
     setTodos([])
   }

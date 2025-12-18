@@ -1,5 +1,11 @@
 # @vibecode-db/client
 
+## 2.5.0
+
+### Minor Changes
+
+- Bug fixes
+
 ## 2.3.0
 
 ### Minor Changes
