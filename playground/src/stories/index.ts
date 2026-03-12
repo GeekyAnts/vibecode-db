@@ -20,8 +20,8 @@ export const stories: Story[] = [
     title: 'Introduction',
     category: 'Getting Started',
     type: 'doc',
-    description: 'What is vibecode-db and why use it.',
-    content: `# vibecode-db
+    description: 'What is @vibecode-db/client and why use it.',
+    content: `# @vibecode-db/client
 
 A universal database SDK that provides a **1:1 Supabase-compatible API** on the frontend, but delegates to swappable backend adapters.
 
@@ -51,8 +51,8 @@ The query builder implements \`PromiseLike\` - chained methods build up a descri
 ## Quick Start
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { MockAdapter } from 'vibecode-db/adapters/mock';
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 
 const adapter = new MockAdapter();
 const client = createClient('', '', { adapter });
@@ -72,15 +72,15 @@ const { data, error } = await client
     title: 'Installation',
     category: 'Getting Started',
     type: 'doc',
-    description: 'How to install and set up vibecode-db.',
+    description: 'How to install and set up @vibecode-db/client.',
     content: `# Installation
 
 ## Install the package
 
 \`\`\`bash
-npm install vibecode-db
+npm install @vibecode-db/client
 # or
-pnpm add vibecode-db
+pnpm add @vibecode-db/client
 \`\`\`
 
 ## Peer dependencies
@@ -100,12 +100,12 @@ The package ships as **ESM + CJS** dual output with full TypeScript declarations
 
 \`\`\`typescript
 // ESM
-import { createClient } from 'vibecode-db';
-import { MockAdapter } from 'vibecode-db/adapters/mock';
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 
 // CJS
-const { createClient } = require('vibecode-db');
-const { MockAdapter } = require('vibecode-db/adapters/mock');
+const { createClient } = require('@vibecode-db/client');
+const { MockAdapter } = require('@vibecode-db/client/adapters/mock');
 \`\`\`
 
 ## Tree-shakeable adapter imports
@@ -113,10 +113,10 @@ const { MockAdapter } = require('vibecode-db/adapters/mock');
 Each adapter is a separate entry point, so unused adapters are never bundled:
 
 \`\`\`typescript
-import { MockAdapter } from 'vibecode-db/adapters/mock';
-import { SupabaseAdapter } from 'vibecode-db/adapters/supabase';
-import { PocketBaseAdapter } from 'vibecode-db/adapters/pocketbase';
-import { RestAdapter } from 'vibecode-db/adapters/rest';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
+import { SupabaseAdapter } from '@vibecode-db/client/adapters/supabase';
+import { PocketBaseAdapter } from '@vibecode-db/client/adapters/pocketbase';
+import { RestAdapter } from '@vibecode-db/client/adapters/rest';
 \`\`\`
 `,
   },
@@ -125,7 +125,7 @@ import { RestAdapter } from 'vibecode-db/adapters/rest';
     title: 'Creating a Client',
     category: 'Getting Started',
     type: 'doc',
-    description: 'How to create and configure a vibecode-db client.',
+    description: 'How to create and configure a @vibecode-db/client client.',
     content: `# Creating a Client
 
 ## \`createClient(url, key, options)\`
@@ -137,8 +137,8 @@ import { RestAdapter } from 'vibecode-db/adapters/rest';
 | \`options.adapter\` | \`DatabaseAdapter\` | The adapter instance |
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { MockAdapter } from 'vibecode-db/adapters/mock';
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 
 const client = createClient('', '', {
   adapter: new MockAdapter()
@@ -189,8 +189,8 @@ The \`MockAdapter\` stores everything in memory. Perfect for frontend developmen
 ## Setup
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { MockAdapter } from 'vibecode-db/adapters/mock';
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 
 const adapter = new MockAdapter();
 const client = createClient('', '', { adapter });
@@ -248,8 +248,8 @@ npm install @supabase/supabase-js
 ## Setup
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { SupabaseAdapter } from 'vibecode-db/adapters/supabase';
+import { createClient } from '@vibecode-db/client';
+import { SupabaseAdapter } from '@vibecode-db/client/adapters/supabase';
 
 const adapter = new SupabaseAdapter({
   supabaseUrl: 'https://xxx.supabase.co',
@@ -292,7 +292,7 @@ const adapter = new SupabaseAdapter({
     description: 'Adapter for PocketBase backends.',
     content: `# PocketBase Adapter
 
-Translates vibecode-db queries to PocketBase SDK calls, handling the API differences automatically.
+Translates @vibecode-db/client queries to PocketBase SDK calls, handling the API differences automatically.
 
 ## Install peer dependency
 
@@ -303,8 +303,8 @@ npm install pocketbase
 ## Setup
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { PocketBaseAdapter } from 'vibecode-db/adapters/pocketbase';
+import { createClient } from '@vibecode-db/client';
+import { PocketBaseAdapter } from '@vibecode-db/client/adapters/pocketbase';
 
 const adapter = new PocketBaseAdapter({
   url: 'http://127.0.0.1:8090',
@@ -326,7 +326,7 @@ const adapter = new PocketBaseAdapter({ client: pb });
 
 Filters are automatically translated to PocketBase syntax:
 
-| vibecode-db | PocketBase |
+| @vibecode-db/client | PocketBase |
 |-------------|-----------|
 | \`.eq('name', 'Alice')\` | \`name = "Alice"\` |
 | \`.neq('status', 'banned')\` | \`status != "banned"\` |
@@ -349,13 +349,13 @@ Filters are automatically translated to PocketBase syntax:
     description: 'Adapter for conventional REST APIs.',
     content: `# REST Adapter
 
-Maps vibecode-db queries to standard REST endpoint conventions. No peer dependencies required.
+Maps @vibecode-db/client queries to standard REST endpoint conventions. No peer dependencies required.
 
 ## Setup
 
 \`\`\`typescript
-import { createClient } from 'vibecode-db';
-import { RestAdapter } from 'vibecode-db/adapters/rest';
+import { createClient } from '@vibecode-db/client';
+import { RestAdapter } from '@vibecode-db/client/adapters/rest';
 
 const adapter = new RestAdapter({
   baseUrl: 'https://api.example.com',

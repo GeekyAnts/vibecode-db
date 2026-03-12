@@ -1,5 +1,5 @@
-import { createClient } from 'vibecode-db';
-import { MockAdapter } from 'vibecode-db/adapters/mock';
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 import type { AdapterType } from './index';
 
 interface AdapterConfig {
@@ -42,7 +42,7 @@ async function createAdapterClient(config: AdapterConfig) {
   }
 
   if (config.type === 'supabase') {
-    const { SupabaseAdapter } = await import('vibecode-db/adapters/supabase');
+    const { SupabaseAdapter } = await import('@vibecode-db/client/adapters/supabase');
     const adapter = new SupabaseAdapter({
       supabaseUrl: config.supabaseUrl!,
       supabaseKey: config.supabaseKey!,
@@ -51,7 +51,7 @@ async function createAdapterClient(config: AdapterConfig) {
   }
 
   if (config.type === 'pocketbase') {
-    const { PocketBaseAdapter } = await import('vibecode-db/adapters/pocketbase');
+    const { PocketBaseAdapter } = await import('@vibecode-db/client/adapters/pocketbase');
     const adapter = new PocketBaseAdapter({
       url: config.pocketbaseUrl!,
     });
@@ -59,7 +59,7 @@ async function createAdapterClient(config: AdapterConfig) {
   }
 
   if (config.type === 'rest') {
-    const { RestAdapter } = await import('vibecode-db/adapters/rest');
+    const { RestAdapter } = await import('@vibecode-db/client/adapters/rest');
     const adapter = new RestAdapter({
       baseUrl: config.restBaseUrl!,
     });

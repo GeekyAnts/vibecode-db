@@ -23,7 +23,7 @@ export function Sidebar({ selectedStory, onSelect }: SidebarProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex-shrink-0">
-        <h1 className="text-sm font-semibold tracking-tight">vibecode-db</h1>
+        <h1 className="text-sm font-semibold tracking-tight">@vibecode-db/client</h1>
         <p className="text-xs text-muted-foreground mt-0.5">Playground & Docs</p>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">
