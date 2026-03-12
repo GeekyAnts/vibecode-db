@@ -1,0 +1,108 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createClient } from '../../src/index';
+import { MockAdapter } from '../../src/adapters/mock/index';
+
+describe('Mock Auth', () => {
+  let adapter: MockAdapter;
+  let client: ReturnType<typeof createClient>;
+
+  beforeEach(() => {
+    adapter = new MockAdapter();
+    client = createClient('', '', { adapter });
+  });
+
+  it('signs up a new user', async () => {
+    const { data, error } = await client.auth.signUp({ email: 'alice@test.com', password: 'password123' });
+    expect(error).toBeNull();
+    expect(data.user).not.toBeNull();
+    expect(data.user!.email).toBe('alice@test.com');
+    expect(data.session).not.toBeNull();
+  });
+
+  it('prevents duplicate signup', async () => {
+    await client.auth.signUp({ email: 'alice@test.com', password: 'password123' });
+    const { error } = await client.auth.signUp({ email: 'alice@test.com', password: 'password456' });
+    expect(error).not.toBeNull();
+  });
+
+  it('signs in with correct credentials', async () => {
+    await client.auth.signUp({ email: 'bob@test.com', password: 'secret' });
+    await client.auth.signOut();
+
+    const { data, error } = await client.auth.signInWithPassword({ email: 'bob@test.com', password: 'secret' });
+    expect(error).toBeNull();
+    expect(data.user!.email).toBe('bob@test.com');
+    expect(data.session).not.toBeNull();
+  });
+
+  it('rejects wrong password', async () => {
+    await client.auth.signUp({ email: 'bob@test.com', password: 'secret' });
+    await client.auth.signOut();
+
+    const { error } = await client.auth.signInWithPassword({ email: 'bob@test.com', password: 'wrong' });
+    expect(error).not.toBeNull();
+  });
+
+  it('gets current user', async () => {
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    const { data } = await client.auth.getUser();
+    expect(data.user!.email).toBe('alice@test.com');
+  });
+
+  it('returns null user when not authenticated', async () => {
+    const { data, error } = await client.auth.getUser();
+    expect(data.user).toBeNull();
+    expect(error).not.toBeNull();
+  });
+
+  it('gets current session', async () => {
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    const { data } = await client.auth.getSession();
+    expect(data.session).not.toBeNull();
+    expect(data.session!.access_token).toBeTruthy();
+  });
+
+  it('signs out', async () => {
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    await client.auth.signOut();
+    const { data } = await client.auth.getSession();
+    expect(data.session).toBeNull();
+  });
+
+  it('fires auth state change on sign in', async () => {
+    const callback = vi.fn();
+    client.auth.onAuthStateChange(callback);
+
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    expect(callback).toHaveBeenCalledWith('SIGNED_IN', expect.any(Object));
+  });
+
+  it('fires auth state change on sign out', async () => {
+    const callback = vi.fn();
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+
+    client.auth.onAuthStateChange(callback);
+    await client.auth.signOut();
+    expect(callback).toHaveBeenCalledWith('SIGNED_OUT', null);
+  });
+
+  it('unsubscribes from auth state changes', async () => {
+    const callback = vi.fn();
+    const { data: { subscription } } = client.auth.onAuthStateChange(callback);
+
+    subscription.unsubscribe();
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('updates user metadata', async () => {
+    await client.auth.signUp({ email: 'alice@test.com', password: 'pass' });
+    const { data } = await client.auth.updateUser({ data: { name: 'Alice' } });
+    expect(data.user!.user_metadata.name).toBe('Alice');
+  });
+
+  it('resets password for email (no-op)', async () => {
+    const { error } = await client.auth.resetPasswordForEmail('alice@test.com');
+    expect(error).toBeNull();
+  });
+});

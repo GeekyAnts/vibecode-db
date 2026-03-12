@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd playground && pnpm install && pnpm run build",
+  "outputDirectory": "playground/dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
