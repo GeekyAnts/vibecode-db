@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { stories, categories } from '../stories';
 import type { Story } from '../stories';
 import { Badge } from '@/components/ui/badge';
@@ -46,8 +47,9 @@ export function Sidebar({ selectedStory, onSelect }: SidebarProps) {
                   </Badge>
                 </div>
                 {categoryStories.map((story) => (
-                  <button
+                  <Link
                     key={story.id}
+                    to={`/${story.id}`}
                     onClick={() => onSelect(story)}
                     className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer flex items-center gap-2 ${
                       selectedStory.id === story.id
@@ -62,7 +64,7 @@ export function Sidebar({ selectedStory, onSelect }: SidebarProps) {
                       </svg>
                     )}
                     <span className="truncate">{story.title}</span>
-                  </button>
+                  </Link>
                 ))}
               </div>
             );

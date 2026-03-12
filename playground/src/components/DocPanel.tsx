@@ -1,4 +1,5 @@
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface DocPanelProps {
   content: string;
@@ -9,6 +10,7 @@ export function DocPanel({ content }: DocPanelProps) {
     <div className="h-full overflow-y-auto">
       <div className="max-w-3xl mx-auto px-8 py-8 prose-container">
         <Markdown
+          remarkPlugins={[remarkGfm]}
           components={{
             h1: ({ children }) => (
               <h1 className="text-2xl font-bold tracking-tight mb-4 text-foreground">{children}</h1>

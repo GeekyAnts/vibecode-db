@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router';
 import { stories } from './stories';
-import type { Story } from './stories';
 import { runStory } from './stories/runner';
 import type { RunResult } from './stories/runner';
 import { Sidebar } from './components/Sidebar';
@@ -12,17 +12,23 @@ import type { AdapterConfig } from './components/AdapterSwitcher';
 import { Badge } from '@/components/ui/badge';
 
 function App() {
-  const [selectedStory, setSelectedStory] = useState<Story>(stories[0]);
-  const [code, setCode] = useState(stories[0].code ?? '');
+  const { storyId } = useParams();
+  const navigate = useNavigate();
+
+  const selectedStory = stories.find(s => s.id === storyId) ?? stories[0];
+  const [code, setCode] = useState(selectedStory.code ?? '');
   const [result, setResult] = useState<RunResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [adapterConfig, setAdapterConfig] = useState<AdapterConfig>({ type: 'mock' });
 
-  const handleSelectStory = useCallback((story: Story) => {
-    setSelectedStory(story);
-    setCode(story.code ?? '');
+  useEffect(() => {
+    setCode(selectedStory.code ?? '');
     setResult(null);
-  }, []);
+  }, [selectedStory.id]);
+
+  const handleSelectStory = useCallback((story: typeof selectedStory) => {
+    navigate(`/${story.id}`);
+  }, [navigate]);
 
   const handleRun = useCallback(async () => {
     setIsRunning(true);
