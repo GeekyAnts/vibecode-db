@@ -18,13 +18,14 @@ const categoryIcons: Record<string, string> = {
   Storage: 'M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z',
   Realtime: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
   RPC: 'M7 8l-4 4 4 4M17 8l4 4-4 4M14 4l-4 16',
+  'Sample Expo App': 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
 };
 
 export function Sidebar({ selectedStory, onSelect }: SidebarProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex-shrink-0">
-        <h1 className="text-sm font-semibold tracking-tight">@vibecode-db/client</h1>
+        <h1 className="text-sm font-semibold tracking-tight flex items-center gap-1.5">@vibecode-db/client <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">v3</span></h1>
         <p className="text-xs text-muted-foreground mt-0.5">Playground & Docs</p>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">

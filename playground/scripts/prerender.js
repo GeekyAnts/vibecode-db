@@ -15,6 +15,9 @@ const stories = getStories();
 const defaultTitle = '@vibecode-db/client - Playground & Docs';
 const defaultDesc = 'Universal database SDK with Supabase-compatible API and swappable adapters. Interactive playground and documentation.';
 
+// Base URL for the deployed site (set via env or fallback)
+const SITE_URL = process.env.SITE_URL || 'https://vibecode-db.vercel.app';
+
 function generatePage(url, title, description) {
   const appHtml = render(url);
   return template
@@ -40,4 +43,40 @@ for (const story of stories) {
   fs.writeFileSync(path.resolve(dir, 'index.html'), html);
 }
 
-console.log(`Pre-rendered ${stories.length + 1} pages.`);
+// Generate sitemap.xml
+const today = new Date().toISOString().split('T')[0];
+const sitemapEntries = [
+  { url: '/', priority: '1.0', changefreq: 'weekly' },
+  ...stories.map((s) => ({
+    url: `/${s.id}`,
+    priority: s.id.startsWith('doc-') ? '0.8' : '0.6',
+    changefreq: 'monthly',
+  })),
+];
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapEntries
+  .map(
+    (e) => `  <url>
+    <loc>${SITE_URL}${e.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${e.changefreq}</changefreq>
+    <priority>${e.priority}</priority>
+  </url>`
+  )
+  .join('\n')}
+</urlset>
+`;
+
+fs.writeFileSync(path.resolve(distDir, 'sitemap.xml'), sitemap);
+
+// Generate robots.txt
+const robots = `User-agent: *
+Allow: /
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`;
+fs.writeFileSync(path.resolve(distDir, 'robots.txt'), robots);
+
+console.log(`Pre-rendered ${stories.length + 1} pages, sitemap.xml, and robots.txt.`);

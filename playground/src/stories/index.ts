@@ -932,6 +932,338 @@ const { data, error } = await client.rpc('greet', { name: 'World' });
 
 return { data, error };`,
   },
+
+  // ── Sample Expo App ────────────────────────────────
+  {
+    id: 'doc-expo-overview',
+    title: 'Overview',
+    category: 'Sample Expo App',
+    type: 'doc',
+    description: 'A full Expo sample app demonstrating auth, CRUD, storage and adapter switching with @vibecode-db/client.',
+    content: `# Sample Expo App
+
+A complete mobile application built with **Expo**, **Expo Router**, and **NativeWind v4** that demonstrates the full capabilities of \`@vibecode-db/client\`.
+
+## Features
+
+- **Authentication** - Sign up, sign in, sign out with the SDK's auth API
+- **Blog CRUD** - Create, read, update, and delete blog posts
+- **Profile** - Edit name & bio, upload profile picture via device camera roll
+- **Adapter Switching** - Switch between Mock, Supabase, and PocketBase at runtime
+- **NativeWind v4** - All styling via Tailwind \`className\` props on React Native components
+
+## Quick Start
+
+\`\`\`bash
+cd sample-app
+pnpm install
+pnpm start
+\`\`\`
+
+Then press \`w\` for web, \`i\` for iOS simulator, or \`a\` for Android emulator.
+
+## Tech Stack
+
+| Tool | Version |
+|------|---------|
+| Expo | ~52.0 |
+| Expo Router | ~4.0 |
+| React Native | 0.76 |
+| NativeWind | v4 |
+| Tailwind CSS | v3 |
+| @vibecode-db/client | 3.0.0-alpha |
+
+> The mock adapter seeds 3 blog posts and 1 profile. Sign up with any email/password to get started.
+`,
+  },
+  {
+    id: 'doc-expo-structure',
+    title: 'Folder Structure',
+    category: 'Sample Expo App',
+    type: 'doc',
+    description: 'Folder structure and file organization of the sample Expo app.',
+    content: `# Folder Structure
+
+\`\`\`
+sample-app/
+├── app/
+│   ├── _layout.tsx              # Root layout (AppProvider + Stack)
+│   ├── index.tsx                # Entry redirect (auth check)
+│   ├── auth/
+│   │   ├── login.tsx            # Sign in screen
+│   │   ├── signup.tsx           # Sign up screen
+│   │   └── adapter.tsx          # Adapter picker screen
+│   ├── (tabs)/
+│   │   ├── _layout.tsx          # Tab navigator (Blog + Profile)
+│   │   ├── index.tsx            # Blog list with FAB
+│   │   └── profile.tsx          # Profile editor + avatar upload
+│   └── blog/
+│       ├── create.tsx           # Create new post
+│       └── [id].tsx             # View / edit / delete post
+├── components/
+│   └── BlogCard.tsx             # Reusable blog post card
+├── lib/
+│   ├── client.ts                # SDK client factory + mock seeding
+│   └── context.tsx              # React context (client, auth, adapter)
+├── global.css                   # Tailwind directives
+├── tailwind.config.js           # NativeWind preset + content paths
+├── babel.config.js              # jsxImportSource: "nativewind"
+├── metro.config.js              # withNativeWind + SDK symlink config
+├── nativewind-env.d.ts          # TypeScript className types
+├── app.json                     # Expo config
+├── tsconfig.json
+└── package.json
+\`\`\`
+
+## Key Files
+
+### \`lib/client.ts\` - Client Factory
+
+Creates the SDK client for the selected adapter. For Mock, it seeds sample data:
+
+\`\`\`typescript
+import { createClient } from '@vibecode-db/client';
+import { MockAdapter } from '@vibecode-db/client/adapters/mock';
+
+function createSeededMockClient() {
+  const adapter = new MockAdapter();
+
+  adapter.seed('profiles', [
+    { id: 'user-1', name: 'Alice Johnson', ... },
+  ]);
+
+  adapter.seed('posts', [
+    { id: 1, title: 'Getting Started with vibecode-db', ... },
+    { id: 2, title: 'Building Mobile Apps with Expo', ... },
+    { id: 3, title: 'Why Adapter Patterns Matter', ... },
+  ]);
+
+  return createClient('', '', { adapter });
+}
+\`\`\`
+
+### \`lib/context.tsx\` - App Context
+
+Provides the SDK client, auth state, and adapter switching to the entire app via React context:
+
+\`\`\`typescript
+const { client, auth, adapterType, switchAdapter, signIn, signUp, signOut } = useApp();
+\`\`\`
+
+### \`metro.config.js\` - Metro Configuration
+
+Configures Metro to resolve the linked SDK package and its subpath exports:
+
+\`\`\`javascript
+config.watchFolders = [sdkRoot];
+config.resolver.unstable_enablePackageExports = true;
+\`\`\`
+`,
+  },
+  {
+    id: 'doc-expo-architecture',
+    title: 'Architecture',
+    category: 'Sample Expo App',
+    type: 'doc',
+    description: 'App architecture, navigation flow, and data flow in the sample Expo app.',
+    content: `# Architecture
+
+## Navigation Flow
+
+\`\`\`
+app/index.tsx
+  │
+  ├── Not authenticated ──→ auth/login.tsx ←──→ auth/signup.tsx
+  │                              │
+  │                              └──→ auth/adapter.tsx (change backend)
+  │
+  └── Authenticated ──→ (tabs)/_layout.tsx
+                           ├── Blog tab (index.tsx)
+                           │     └──→ blog/create.tsx
+                           │     └──→ blog/[id].tsx (view/edit/delete)
+                           └── Profile tab (profile.tsx)
+                                 └──→ auth/adapter.tsx
+\`\`\`
+
+## Data Flow
+
+\`\`\`
+AppProvider (context.tsx)
+  │
+  ├── client ────────→ SDK client instance
+  ├── auth ──────────→ { isAuthenticated, user }
+  ├── adapterType ───→ 'mock' | 'supabase' | 'pocketbase'
+  ├── switchAdapter ─→ Rebuilds client with new adapter
+  ├── signIn / signUp → client.auth.signInWithPassword / signUp
+  └── signOut ───────→ client.auth.signOut
+\`\`\`
+
+All screens access the SDK through the \`useApp()\` hook. The client is rebuilt when the adapter changes, and auth state resets.
+
+## SDK Usage Examples
+
+### Fetching Posts
+
+\`\`\`typescript
+const { data } = await client
+  .from('posts')
+  .select('*')
+  .order('created_at', { ascending: false });
+\`\`\`
+
+### Creating a Post
+
+\`\`\`typescript
+await client.from('posts').insert({
+  title: 'My New Post',
+  content: 'Post body here...',
+  author_id: auth.user.id,
+  author_name: auth.user.email,
+  created_at: new Date().toISOString(),
+});
+\`\`\`
+
+### Updating a Post
+
+\`\`\`typescript
+await client
+  .from('posts')
+  .update({ title: 'Updated Title', content: 'New content' })
+  .eq('id', postId);
+\`\`\`
+
+### Deleting a Post
+
+\`\`\`typescript
+await client
+  .from('posts')
+  .delete()
+  .eq('id', postId);
+\`\`\`
+
+### Uploading a Profile Picture
+
+\`\`\`typescript
+await client.storage.createBucket('avatars', { public: true });
+await client.storage.from('avatars').upload(fileName, imageUri);
+const { data } = client.storage.from('avatars').getPublicUrl(fileName);
+\`\`\`
+
+### Updating Profile
+
+\`\`\`typescript
+await client
+  .from('profiles')
+  .update({ name, bio, avatar_url: avatarUri })
+  .eq('id', auth.user.id);
+\`\`\`
+`,
+  },
+  {
+    id: 'doc-expo-adapters',
+    title: 'Switching Adapters',
+    category: 'Sample Expo App',
+    type: 'doc',
+    description: 'How to switch between Mock, Supabase, and PocketBase adapters in the sample Expo app.',
+    content: `# Switching Adapters
+
+The sample app supports switching between **Mock**, **Supabase**, and **PocketBase** adapters at runtime. The adapter picker is accessible from both the login screen and the profile screen.
+
+## How It Works
+
+When you switch adapters, the app:
+
+1. Creates a new SDK client with the selected adapter
+2. Resets the auth state (you'll need to sign in again)
+3. All subsequent queries go through the new adapter
+
+\`\`\`typescript
+// From lib/client.ts
+export async function buildClient(config: AdapterConfig) {
+  if (config.type === 'mock') {
+    return createSeededMockClient(); // pre-seeded data
+  }
+
+  if (config.type === 'supabase') {
+    const { SupabaseAdapter } = await import(
+      '@vibecode-db/client/adapters/supabase'
+    );
+    const adapter = new SupabaseAdapter({
+      supabaseUrl: config.supabaseUrl!,
+      supabaseKey: config.supabaseKey!,
+    });
+    return createClient(url, key, { adapter });
+  }
+
+  if (config.type === 'pocketbase') {
+    const { PocketBaseAdapter } = await import(
+      '@vibecode-db/client/adapters/pocketbase'
+    );
+    const adapter = new PocketBaseAdapter({
+      url: config.pocketbaseUrl!,
+    });
+    return createClient(url, '', { adapter });
+  }
+}
+\`\`\`
+
+## Mock Adapter
+
+No configuration needed. Comes with seeded data:
+
+- **3 blog posts** with titles, content, and timestamps
+- **1 user profile** with name and bio
+- Sign up with **any email/password** to create a new user
+
+## Supabase Adapter
+
+Requires a Supabase project:
+
+1. Enter your **Project URL** (e.g. \`https://xxx.supabase.co\`)
+2. Enter your **Anon Key**
+3. Your Supabase project needs \`posts\` and \`profiles\` tables
+
+### Required Tables
+
+\`\`\`sql
+create table posts (
+  id serial primary key,
+  title text not null,
+  content text not null,
+  author_id text not null,
+  author_name text,
+  created_at timestamptz default now()
+);
+
+create table profiles (
+  id text primary key,
+  email text,
+  name text,
+  bio text,
+  avatar_url text
+);
+\`\`\`
+
+## PocketBase Adapter
+
+Requires a running PocketBase instance:
+
+1. Enter your **PocketBase URL** (default: \`http://127.0.0.1:8090\`)
+2. Create \`posts\` and \`profiles\` collections in the PocketBase admin UI
+
+## NativeWind v4 Setup
+
+The app uses NativeWind v4 for Tailwind CSS support in React Native. Key configuration:
+
+| File | Purpose |
+|------|---------|
+| \`babel.config.js\` | \`jsxImportSource: "nativewind"\` enables \`className\` on RN components |
+| \`metro.config.js\` | \`withNativeWind()\` processes CSS at build time |
+| \`tailwind.config.js\` | \`nativewind/preset\` generates RN-compatible styles |
+| \`global.css\` | Standard Tailwind directives |
+| \`nativewind-env.d.ts\` | TypeScript support for \`className\` prop |
+`,
+  },
 ];
 
 export const categories = [...new Set(stories.map((s) => s.category))];
