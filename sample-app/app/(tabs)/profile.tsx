@@ -12,7 +12,9 @@ import {
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 interface Profile {
   id: string;
@@ -23,43 +25,100 @@ interface Profile {
 }
 
 export default function ProfileScreen() {
-  const { client, auth, signOut, adapterType } = useApp();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { client } = useApp();
+  const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
+  const profileQuery = useQuery({
+    queryKey: ["profiles", user?.id],
+    queryFn: async () => {
+      const { data, error } = await client
+        .from("profiles")
+        .select("*")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Profile) ?? null;
+    },
+    enabled: !!user,
+  });
+
+  // Sync local form state when profile data loads
   useEffect(() => {
-    loadProfile();
-  }, [client, auth]);
-
-  async function loadProfile() {
-    if (!auth.user) {
-      setLoading(false);
-      return;
+    if (profileQuery.data) {
+      setName(profileQuery.data.name);
+      setBio(profileQuery.data.bio);
+      setAvatarUri(profileQuery.data.avatar_url);
     }
+  }, [profileQuery.data]);
 
-    const { data } = await client
-      .from("profiles")
-      .select("*")
-      .eq("id", auth.user.id)
-      .maybeSingle();
+  const uploadAvatar = useMutation({
+    mutationFn: async (uri: string) => {
+      const fileName = `${user?.id ?? "anon"}-${Date.now()}.jpg`;
+      const response = await fetch(uri);
+      const arrayBuffer = await response.arrayBuffer();
 
-    if (data) {
-      const p = data as Profile;
-      setProfile(p);
-      setName(p.name);
-      setBio(p.bio);
-      setAvatarUri(p.avatar_url);
-    } else {
-      // Create a default profile
-      setName("");
-      setBio("");
-    }
-    setLoading(false);
-  }
+      const { error: uploadError } = await client.storage
+        .from("avatars")
+        .upload(fileName, arrayBuffer, {
+          contentType: "image/jpeg",
+          upsert: true,
+        });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = client.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      return urlData?.publicUrl ?? uri;
+    },
+    onSuccess: (publicUrl) => {
+      setAvatarUri(publicUrl);
+    },
+    onError: (err) => {
+      Alert.alert(
+        "Upload failed",
+        err instanceof Error ? err.message : "Could not upload image"
+      );
+    },
+  });
+
+  const saveProfile = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const profileData = {
+        id: user.id,
+        email: user.email,
+        name,
+        bio,
+        avatar_url: avatarUri,
+      };
+
+      if (profileQuery.data) {
+        const { error } = await client
+          .from("profiles")
+          .update(profileData)
+          .eq("id", user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("profiles").insert(profileData);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profiles", user?.id] });
+      Alert.alert("Saved", "Your profile has been updated.");
+    },
+    onError: (err) => {
+      Alert.alert(
+        "Error",
+        err instanceof Error ? err.message : "Failed to save profile"
+      );
+    },
+  });
 
   async function handlePickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -71,60 +130,18 @@ export default function ProfileScreen() {
 
     if (!result.canceled && result.assets[0]) {
       const uri = result.assets[0].uri;
-      setAvatarUri(uri);
-
-      // Upload to storage
-      try {
-        await client.storage.createBucket("avatars", { public: true });
-      } catch {
-        // Bucket may already exist
-      }
-
-      const fileName = `${auth.user?.id ?? "anon"}-${Date.now()}.jpg`;
-      await client.storage.from("avatars").upload(fileName, uri);
-
-      const { data: urlData } = client.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      if (urlData?.publicUrl) {
-        setAvatarUri(urlData.publicUrl);
-      }
+      setAvatarUri(uri); // Optimistic local preview
+      uploadAvatar.mutate(uri);
     }
   }
 
-  async function handleSave() {
-    if (!auth.user) return;
-    setSaving(true);
-
-    const profileData = {
-      id: auth.user.id,
-      email: auth.user.email,
-      name,
-      bio,
-      avatar_url: avatarUri,
-    };
-
-    if (profile) {
-      await client
-        .from("profiles")
-        .update(profileData)
-        .eq("id", auth.user.id);
-    } else {
-      await client.from("profiles").insert(profileData);
-    }
-
-    setSaving(false);
-    Alert.alert("Saved", "Your profile has been updated.");
-    loadProfile();
+  function handleSignOut() {
+    signOut.mutate(undefined, {
+      onSuccess: () => router.replace("/auth/login"),
+    });
   }
 
-  async function handleSignOut() {
-    await signOut();
-    router.replace("/auth/login");
-  }
-
-  if (loading) {
+  if (profileQuery.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" color="#4F46E5" />
@@ -151,14 +168,9 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
         <Text className="text-lg font-semibold text-gray-900 mt-4">
-          {name || auth.user?.email || "Your Profile"}
+          {name || user?.email || "Your Profile"}
         </Text>
-        <Text className="text-sm text-gray-500">{auth.user?.email}</Text>
-        <View className="mt-2 bg-indigo-50 rounded-full px-3 py-1">
-          <Text className="text-xs text-indigo-600 font-medium">
-            {adapterType} adapter
-          </Text>
-        </View>
+        <Text className="text-sm text-gray-500">{user?.email}</Text>
       </View>
 
       <View className="px-6 pt-4">
@@ -189,10 +201,10 @@ export default function ProfileScreen() {
 
         <Pressable
           className="bg-indigo-600 rounded-lg py-3.5 items-center active:bg-indigo-700"
-          onPress={handleSave}
-          disabled={saving}
+          onPress={() => saveProfile.mutate()}
+          disabled={saveProfile.isPending}
         >
-          {saving ? (
+          {saveProfile.isPending ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white font-semibold text-base">
@@ -206,15 +218,6 @@ export default function ProfileScreen() {
           onPress={handleSignOut}
         >
           <Text className="text-red-600 font-semibold text-base">Sign Out</Text>
-        </Pressable>
-
-        <Pressable
-          className="items-center mt-4 py-2"
-          onPress={() => router.push("/auth/adapter")}
-        >
-          <Text className="text-gray-400 text-sm underline">
-            Change adapter
-          </Text>
         </Pressable>
       </View>
     </ScrollView>

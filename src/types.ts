@@ -53,6 +53,8 @@ export interface QueryDescriptor {
   returningColumns?: string;
   count?: 'exact' | 'planned' | 'estimated';
   onConflict?: string;
+  /** Parsed relational includes from select string (populated by adapters that need it) */
+  relations?: import('./relational/types').RelationNode[];
 }
 
 export interface AdapterResponse<T = any> {

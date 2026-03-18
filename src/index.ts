@@ -21,6 +21,9 @@ export { RealtimeClient } from './realtime/RealtimeClient';
 export { RealtimeChannel } from './realtime/RealtimeChannel';
 export { FunctionsClient } from './functions/FunctionsClient';
 export { PostgrestError, AuthError, StorageError, FunctionsError } from './errors';
+export { parseSelect } from './relational/select-parser';
+export { SchemaRegistry } from './relational/schema-registry';
+export { defineTable, defineSchema, hasMany, belongsTo } from './relational/define-table';
 
 export type {
   QueryDescriptor,
@@ -49,3 +52,14 @@ export type {
   FunctionsAdapter,
   RpcOptions,
 } from './adapters/types';
+
+export type {
+  RelationNode,
+  ParsedSelect,
+  RelationType,
+  RelationDefinition,
+  TableSchema,
+  SchemaDefinition,
+} from './relational/types';
+
+export type { TableDefinition, RelationDescriptor } from './relational/define-table';

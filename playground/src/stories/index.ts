@@ -427,11 +427,11 @@ return { data, error };`,
     title: 'Select Single Row',
     category: 'CRUD',
     type: 'example',
-    description: 'Fetch a single row by ID.',
+    description: 'Fetch a single row by email.',
     code: `const { data, error } = await client
   .from('users')
   .select('*')
-  .eq('id', 1)
+  .eq('email', 'alice@test.com')
   .single();
 
 return { data, error };`,
@@ -445,7 +445,7 @@ return { data, error };`,
     code: `const { data, error } = await client
   .from('users')
   .select('*')
-  .eq('id', 999)
+  .eq('email', 'nonexistent@test.com')
   .maybeSingle();
 
 return { data, error };`,
@@ -457,12 +457,12 @@ return { data, error };`,
     type: 'example',
     description: 'Insert a new record into a table.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('activity_logs')
   .insert({
-    name: 'Diana Prince',
-    email: 'diana@example.com',
-    age: 30,
-    status: 'active',
+    user_id: '11111111-1111-1111-1111-111111111111',
+    entity_type: 'project',
+    entity_id: 'aaaa1111-1111-1111-1111-111111111111',
+    action: 'viewed',
   });
 
 return { data, error };`,
@@ -474,10 +474,20 @@ return { data, error };`,
     type: 'example',
     description: 'Batch insert multiple records.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('activity_logs')
   .insert([
-    { name: 'Eve', email: 'eve@example.com', age: 22, status: 'active' },
-    { name: 'Frank', email: 'frank@example.com', age: 45, status: 'inactive' },
+    {
+      user_id: '11111111-1111-1111-1111-111111111111',
+      entity_type: 'task',
+      entity_id: 'bbbb1111-1111-1111-1111-111111111111',
+      action: 'viewed',
+    },
+    {
+      user_id: '22222222-2222-2222-2222-222222222222',
+      entity_type: 'task',
+      entity_id: 'bbbb2222-2222-2222-2222-222222222222',
+      action: 'updated',
+    },
   ]);
 
 return { data, error };`,
@@ -489,9 +499,9 @@ return { data, error };`,
     type: 'example',
     description: 'Update records matching a filter.',
     code: `const { data, error } = await client
-  .from('users')
-  .update({ status: 'suspended' })
-  .eq('id', 2);
+  .from('tasks')
+  .update({ status: 'in_progress' })
+  .eq('status', 'todo');
 
 return { data, error };`,
   },
@@ -504,7 +514,11 @@ return { data, error };`,
     code: `const { data, error } = await client
   .from('users')
   .upsert(
-    { id: 1, name: 'Alice (Updated)', email: 'alice-new@example.com', age: 31, status: 'active' },
+    {
+      id: '11111111-1111-1111-1111-111111111111',
+      name: 'Alice (Updated)',
+      email: 'alice@test.com',
+    },
     { onConflict: 'id' }
   );
 
@@ -517,9 +531,9 @@ return { data, error };`,
     type: 'example',
     description: 'Delete records matching a filter.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('activity_logs')
   .delete()
-  .eq('id', 3);
+  .eq('action', 'viewed');
 
 return { data, error };`,
   },
@@ -532,9 +546,9 @@ return { data, error };`,
     type: 'example',
     description: 'Filter rows where a column equals a value.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('tasks')
   .select('*')
-  .eq('status', 'active');
+  .eq('status', 'done');
 
 return { data, error };`,
   },
@@ -545,23 +559,9 @@ return { data, error };`,
     type: 'example',
     description: 'Filter rows where a column does not equal a value.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('tasks')
   .select('*')
-  .neq('status', 'active');
-
-return { data, error };`,
-  },
-  {
-    id: 'filter-gt-lt',
-    title: 'Greater Than / Less Than',
-    category: 'Filters',
-    type: 'example',
-    description: 'Filter rows with comparison operators.',
-    code: `const { data, error } = await client
-  .from('users')
-  .select('*')
-  .gt('age', 25)
-  .lte('age', 35);
+  .neq('status', 'done');
 
 return { data, error };`,
   },
@@ -579,15 +579,28 @@ return { data, error };`,
 return { data, error };`,
   },
   {
+    id: 'filter-ilike',
+    title: 'Case-Insensitive Match (ilike)',
+    category: 'Filters',
+    type: 'example',
+    description: 'Filter with case-insensitive pattern matching.',
+    code: `const { data, error } = await client
+  .from('users')
+  .select('*')
+  .ilike('name', '%ALICE%');
+
+return { data, error };`,
+  },
+  {
     id: 'filter-in',
     title: 'In Array (in)',
     category: 'Filters',
     type: 'example',
     description: 'Filter where column value is in a list.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('tasks')
   .select('*')
-  .in('id', [1, 3]);
+  .in('status', ['todo', 'in_progress']);
 
 return { data, error };`,
   },
@@ -598,9 +611,9 @@ return { data, error };`,
     type: 'example',
     description: 'Filter rows where a column is null.',
     code: `const { data, error } = await client
-  .from('posts')
+  .from('comments')
   .select('*')
-  .is('deleted_at', null);
+  .is('parent_comment_id', null);
 
 return { data, error };`,
   },
@@ -611,9 +624,9 @@ return { data, error };`,
     type: 'example',
     description: 'Combine filters with OR logic (PostgREST syntax).',
     code: `const { data, error } = await client
-  .from('users')
+  .from('tasks')
   .select('*')
-  .or('age.gt.30,status.eq.inactive');
+  .or('status.eq.done,status.eq.in_progress');
 
 return { data, error };`,
   },
@@ -624,9 +637,9 @@ return { data, error };`,
     type: 'example',
     description: 'Negate a filter condition.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('tasks')
   .select('*')
-  .not('status', 'eq', 'inactive');
+  .not('status', 'eq', 'todo');
 
 return { data, error };`,
   },
@@ -637,22 +650,22 @@ return { data, error };`,
     type: 'example',
     description: 'Filter by matching multiple column values.',
     code: `const { data, error } = await client
-  .from('users')
+  .from('project_members')
   .select('*')
-  .match({ status: 'active', age: 30 });
+  .match({ role: 'owner' });
 
 return { data, error };`,
   },
   {
-    id: 'filter-contains',
-    title: 'Array Contains',
+    id: 'filter-gt-lt',
+    title: 'Greater Than / Less Than',
     category: 'Filters',
     type: 'example',
-    description: 'Filter where an array column contains all specified values.',
+    description: 'Filter rows with comparison operators on timestamps.',
     code: `const { data, error } = await client
-  .from('posts')
+  .from('users')
   .select('*')
-  .contains('tags', ['typescript']);
+  .gt('created_at', '2026-01-01');
 
 return { data, error };`,
   },
@@ -680,7 +693,7 @@ return { data, error };`,
     code: `const { data, error } = await client
   .from('users')
   .select('*')
-  .order('age', { ascending: false });
+  .order('created_at', { ascending: false });
 
 return { data, error };`,
   },
@@ -693,7 +706,7 @@ return { data, error };`,
     code: `const { data, error } = await client
   .from('users')
   .select('*')
-  .limit(2);
+  .limit(3);
 
 return { data, error };`,
   },
@@ -706,7 +719,7 @@ return { data, error };`,
     code: `const { data, error } = await client
   .from('users')
   .select('*')
-  .range(1, 2);
+  .range(2, 4);
 
 return { data, error };`,
   },
@@ -717,10 +730,10 @@ return { data, error };`,
     type: 'example',
     description: 'Combine filters, ordering, and pagination.',
     code: `const { data, error } = await client
-  .from('users')
-  .select('id, name, age')
-  .eq('status', 'active')
-  .order('age', { ascending: false })
+  .from('tasks')
+  .select('id, title, status')
+  .neq('status', 'done')
+  .order('title', { ascending: true })
   .limit(2);
 
 return { data, error };`,
@@ -929,6 +942,149 @@ return { data, error };`,
     description: 'Call an RPC that returns a greeting string.',
     code: `// The mock adapter has a pre-registered "greet" function
 const { data, error } = await client.rpc('greet', { name: 'World' });
+
+return { data, error };`,
+  },
+
+  // ── Relational Queries ──────────────────────────────
+  {
+    id: 'rel-one-to-many',
+    title: 'One-to-Many',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch projects with their tasks.',
+    code: `const { data, error } = await client
+  .from('projects')
+  .select(\`
+    id,
+    name,
+    tasks (
+      id,
+      title,
+      status
+    )
+  \`);
+
+return { data, error };`,
+  },
+  {
+    id: 'rel-many-to-one',
+    title: 'Many-to-One',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch projects with their owner (belongsTo).',
+    code: `const { data, error } = await client
+  .from('projects')
+  .select(\`
+    id,
+    name,
+    description,
+    owner:users (
+      name,
+      email
+    )
+  \`);
+
+return { data, error };`,
+  },
+  {
+    id: 'rel-nested',
+    title: 'Nested Relations',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch projects → tasks → comments (two levels deep).',
+    code: `const { data, error } = await client
+  .from('projects')
+  .select(\`
+    id,
+    name,
+    tasks (
+      id,
+      title,
+      status,
+      comments (
+        id,
+        content
+      )
+    )
+  \`);
+
+return { data, error };`,
+  },
+  {
+    id: 'rel-with-filter',
+    title: 'Relations + Filter',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch a single project with its tasks and members.',
+    code: `const { data, error } = await client
+  .from('projects')
+  .select(\`
+    id,
+    name,
+    tasks (
+      title,
+      status
+    ),
+    project_members (
+      role,
+      user:users (
+        name
+      )
+    )
+  \`)
+  .eq('name', 'Website Redesign')
+  .single();
+
+return { data, error };`,
+  },
+  {
+    id: 'rel-deep-nesting',
+    title: 'Deep Nesting (3 levels)',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch users → projects → tasks → comments.',
+    code: `const { data, error } = await client
+  .from('users')
+  .select(\`
+    id,
+    name,
+    projects (
+      id,
+      name,
+      tasks (
+        id,
+        title,
+        comments (
+          content
+        )
+      )
+    )
+  \`)
+  .eq('name', 'Alice');
+
+return { data, error };`,
+  },
+  {
+    id: 'rel-comments-with-context',
+    title: 'Comments with Task & User',
+    category: 'Relational',
+    type: 'example',
+    description: 'Fetch comments with their parent task and commenting user.',
+    code: `const { data, error } = await client
+  .from('comments')
+  .select(\`
+    id,
+    content,
+    task:tasks (
+      title,
+      status
+    ),
+    user:users (
+      name,
+      email
+    )
+  \`);
 
 return { data, error };`,
   },

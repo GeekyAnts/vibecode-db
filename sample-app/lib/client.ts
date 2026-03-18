@@ -1,5 +1,8 @@
 import { createClient } from "@vibecode-db/client";
 import { MockAdapter } from "@vibecode-db/client/adapters/mock";
+import { SupabaseAdapter } from "@vibecode-db/client/adapters/supabase";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type AdapterType = "mock" | "supabase" | "pocketbase";
 
@@ -8,6 +11,17 @@ export interface AdapterConfig {
   supabaseUrl?: string;
   supabaseKey?: string;
   pocketbaseUrl?: string;
+}
+
+/** Read adapter config from EXPO_PUBLIC_ env variables */
+export function getEnvConfig(): AdapterConfig {
+  const type = (process.env.EXPO_PUBLIC_ADAPTER_TYPE as AdapterType) || "mock";
+  return {
+    type,
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || undefined,
+    supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_KEY || undefined,
+    pocketbaseUrl: process.env.EXPO_PUBLIC_POCKETBASE_URL || undefined,
+  };
 }
 
 function createSeededMockClient() {
@@ -53,6 +67,14 @@ function createSeededMockClient() {
     },
   ]);
 
+  adapter.seedUsers([
+    {
+      id: "user-1",
+      email: "alice@example.com",
+      password: "password123",
+    },
+  ]);
+
   return createClient("", "", { adapter });
 }
 
@@ -62,13 +84,24 @@ export async function buildClient(config: AdapterConfig) {
   }
 
   if (config.type === "supabase") {
-    const { SupabaseAdapter } = await import(
-      "@vibecode-db/client/adapters/supabase"
+    const supabaseClient = createSupabaseClient(
+      config.supabaseUrl!,
+      config.supabaseKey!,
+      {
+        auth: {
+          storage: AsyncStorage,
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: false,
+        },
+      }
     );
     const adapter = new SupabaseAdapter({
       supabaseUrl: config.supabaseUrl!,
       supabaseKey: config.supabaseKey!,
+      client: supabaseClient,
     });
+    await adapter.ready;
     return createClient(config.supabaseUrl!, config.supabaseKey!, { adapter });
   }
 

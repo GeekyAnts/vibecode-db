@@ -10,16 +10,40 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, Stack } from "expo-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 export default function CreateBlogScreen() {
-  const { client, auth } = useApp();
+  const { client } = useApp();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleCreate() {
+  const createPost = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const { error: insertError } = await client.from("posts").insert({
+        title: title.trim(),
+        content: content.trim(),
+        author_id: user.id,
+        author_name: user.email,
+        created_at: new Date().toISOString(),
+      });
+      if (insertError) throw insertError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      router.back();
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Failed to create post");
+    },
+  });
+
+  function handleCreate() {
     if (!title.trim()) {
       setError("Title is required");
       return;
@@ -28,25 +52,8 @@ export default function CreateBlogScreen() {
       setError("Content is required");
       return;
     }
-
-    setLoading(true);
     setError(null);
-
-    const { error: insertError } = await client.from("posts").insert({
-      title: title.trim(),
-      content: content.trim(),
-      author_id: auth.user?.id ?? "anon",
-      author_name: auth.user?.email ?? "Anonymous",
-      created_at: new Date().toISOString(),
-    });
-
-    setLoading(false);
-
-    if (insertError) {
-      setError(insertError.message);
-    } else {
-      router.back();
-    }
+    createPost.mutate();
   }
 
   return (
@@ -106,9 +113,9 @@ export default function CreateBlogScreen() {
         <Pressable
           className="bg-indigo-600 rounded-lg py-3.5 items-center active:bg-indigo-700"
           onPress={handleCreate}
-          disabled={loading}
+          disabled={createPost.isPending}
         >
-          {loading ? (
+          {createPost.isPending ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white font-semibold text-base">

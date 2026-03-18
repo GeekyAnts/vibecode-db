@@ -134,6 +134,19 @@ export class MockAuthAdapter implements AuthAdapter {
     }
   }
 
+  /** Seed a user into the store without setting session or firing listeners */
+  seedUser(email: string, password: string, options?: { id?: string; user_metadata?: Record<string, any> }): AuthUser {
+    const user: AuthUser = {
+      id: options?.id || generateId(),
+      email,
+      app_metadata: {},
+      user_metadata: options?.user_metadata || {},
+      created_at: new Date().toISOString(),
+    };
+    this.users.set(email, { user, password });
+    return user;
+  }
+
   /** Reset all auth state - useful for tests */
   reset() {
     this.users.clear();

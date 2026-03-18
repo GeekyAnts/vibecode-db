@@ -1,9 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useApp } from "@/lib/context";
 
 export default function TabsLayout() {
-  const { adapterType } = useApp();
 
   return (
     <Tabs
@@ -38,7 +36,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: "Blog",
-          headerTitle: `Blog (${adapterType})`,
+          headerTitle: "Blog",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="newspaper-outline" size={size} color={color} />
           ),

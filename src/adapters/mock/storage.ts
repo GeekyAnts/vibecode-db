@@ -1,6 +1,35 @@
 import type { StorageAdapter, StorageFileAdapter } from '../types';
 import type { StorageBucket, StorageFile } from '../../types';
 
+const MIME_TYPES: Record<string, string> = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+  '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+  '.bmp': 'image/bmp', '.ico': 'image/x-icon',
+  '.mp4': 'video/mp4', '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
+  '.pdf': 'application/pdf', '.json': 'application/json',
+  '.txt': 'text/plain', '.html': 'text/html', '.css': 'text/css',
+  '.js': 'application/javascript',
+};
+
+function inferContentType(path: string): string {
+  const ext = path.slice(path.lastIndexOf('.')).toLowerCase();
+  return MIME_TYPES[ext] || 'application/octet-stream';
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function arrayBufferToBase64DataUri(buffer: ArrayBuffer, contentType: string): string {
+  return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`;
+}
+
 export class MockStorageAdapter implements StorageAdapter {
   private buckets: Map<string, StorageBucket> = new Map();
   private files: Map<string, Map<string, { data: Blob | ArrayBuffer | string; metadata?: Record<string, any> }>> = new Map();
@@ -82,7 +111,22 @@ class MockStorageFileAdapter implements StorageFileAdapter {
     if (store.has(path) && !options?.upsert) {
       return { data: null, error: { message: `File already exists: ${path}` } };
     }
-    store.set(path, { data: file, metadata: { contentType: options?.contentType } });
+
+    const contentType = options?.contentType || inferContentType(path);
+    let publicUrl: string;
+
+    if (typeof file === 'string') {
+      // String input (e.g. file:// URI from image picker) — store as-is
+      publicUrl = file;
+    } else if (file instanceof Blob) {
+      const buffer = await file.arrayBuffer();
+      publicUrl = arrayBufferToBase64DataUri(buffer, contentType);
+    } else {
+      // ArrayBuffer
+      publicUrl = arrayBufferToBase64DataUri(file, contentType);
+    }
+
+    store.set(path, { data: file, metadata: { contentType, publicUrl } });
     return { data: { path }, error: null };
   }
 
@@ -150,6 +194,11 @@ class MockStorageFileAdapter implements StorageFileAdapter {
   }
 
   getPublicUrl(path: string) {
+    const store = this.storage._getFileStore(this.bucket);
+    const file = store?.get(path);
+    if (file?.metadata?.publicUrl) {
+      return { data: { publicUrl: file.metadata.publicUrl } };
+    }
     return { data: { publicUrl: `https://mock-storage.local/${this.bucket}/${path}` } };
   }
 

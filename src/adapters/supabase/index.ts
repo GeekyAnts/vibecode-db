@@ -15,7 +15,8 @@ export class SupabaseAdapter implements DatabaseAdapter {
   realtime: RealtimeAdapter;
   functions: FunctionsAdapter;
 
-  private initialized: Promise<void>;
+  /** Resolves when the adapter is fully initialized (auth, storage, etc. are ready) */
+  readonly ready: Promise<void>;
 
   constructor(options: SupabaseAdapterOptions) {
     this.auth = null as unknown as AuthAdapter;
@@ -23,7 +24,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
     this.realtime = null as unknown as RealtimeAdapter;
     this.functions = null as unknown as FunctionsAdapter;
 
-    this.initialized = this.init(options);
+    this.ready = this.init(options);
   }
 
   private async init(options: SupabaseAdapterOptions) {
@@ -48,7 +49,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
   }
 
   async executeQuery<T = any>(descriptor: QueryDescriptor): Promise<AdapterResponse<T>> {
-    await this.initialized;
+    await this.ready;
     let query: any = this.client.from(descriptor.table);
 
     // Operation
@@ -115,7 +116,7 @@ export class SupabaseAdapter implements DatabaseAdapter {
   }
 
   async executeRpc<T = any>(fn: string, args?: Record<string, any>, options?: RpcOptions): Promise<AdapterResponse<T>> {
-    await this.initialized;
+    await this.ready;
     return this.client.rpc(fn, args, options);
   }
 }

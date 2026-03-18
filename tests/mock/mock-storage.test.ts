@@ -125,6 +125,31 @@ describe('Mock Storage', () => {
       expect(data.publicUrl).toContain('photo.jpg');
     });
 
+    it('returns file URI as public url when uploading a string', async () => {
+      await client.storage.from('test-bucket').upload('avatar.jpg', 'file:///tmp/photo.jpg');
+      const { data } = client.storage.from('test-bucket').getPublicUrl('avatar.jpg');
+      expect(data.publicUrl).toBe('file:///tmp/photo.jpg');
+    });
+
+    it('returns data URI as public url when uploading a Blob', async () => {
+      const blob = new Blob(['hello'], { type: 'text/plain' });
+      await client.storage.from('test-bucket').upload('doc.txt', blob);
+      const { data } = client.storage.from('test-bucket').getPublicUrl('doc.txt');
+      expect(data.publicUrl).toMatch(/^data:text\/plain;base64,/);
+    });
+
+    it('returns data URI as public url when uploading an ArrayBuffer', async () => {
+      const buffer = new TextEncoder().encode('hello').buffer;
+      await client.storage.from('test-bucket').upload('image.png', buffer);
+      const { data } = client.storage.from('test-bucket').getPublicUrl('image.png');
+      expect(data.publicUrl).toMatch(/^data:image\/png;base64,/);
+    });
+
+    it('falls back to fake url for non-uploaded files', () => {
+      const { data } = client.storage.from('test-bucket').getPublicUrl('nonexistent.jpg');
+      expect(data.publicUrl).toBe('https://mock-storage.local/test-bucket/nonexistent.jpg');
+    });
+
     it('moves a file', async () => {
       await client.storage.from('test-bucket').upload('old.txt', 'content');
       const { error } = await client.storage.from('test-bucket').move('old.txt', 'new.txt');
