@@ -105,4 +105,54 @@ describe('Mock Auth', () => {
     const { error } = await client.auth.resetPasswordForEmail('alice@test.com');
     expect(error).toBeNull();
   });
+
+  describe('seedUser', () => {
+    it('allows sign in with seeded credentials', async () => {
+      adapter.auth.seedUser('seeded@test.com', 'seedpass');
+      const { data, error } = await client.auth.signInWithPassword({ email: 'seeded@test.com', password: 'seedpass' });
+      expect(error).toBeNull();
+      expect(data.user!.email).toBe('seeded@test.com');
+    });
+
+    it('does not set current session', async () => {
+      adapter.auth.seedUser('seeded@test.com', 'seedpass');
+      const { data } = await client.auth.getSession();
+      expect(data.session).toBeNull();
+    });
+
+    it('does not fire auth listeners', () => {
+      const callback = vi.fn();
+      client.auth.onAuthStateChange(callback);
+      adapter.auth.seedUser('seeded@test.com', 'seedpass');
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    it('accepts a custom id', () => {
+      const user = adapter.auth.seedUser('seeded@test.com', 'seedpass', { id: 'custom-id-123' });
+      expect(user.id).toBe('custom-id-123');
+    });
+
+    it('accepts user_metadata', () => {
+      const user = adapter.auth.seedUser('seeded@test.com', 'seedpass', { user_metadata: { name: 'Seed' } });
+      expect(user.user_metadata.name).toBe('Seed');
+    });
+  });
+
+  describe('seedUsers (via MockAdapter)', () => {
+    it('seeds multiple users and returns adapter for chaining', async () => {
+      const result = adapter.seedUsers([
+        { email: 'a@test.com', password: 'pass1' },
+        { email: 'b@test.com', password: 'pass2', id: 'user-b' },
+      ]);
+      expect(result).toBe(adapter);
+
+      const { error: e1 } = await client.auth.signInWithPassword({ email: 'a@test.com', password: 'pass1' });
+      expect(e1).toBeNull();
+
+      await client.auth.signOut();
+      const { data, error: e2 } = await client.auth.signInWithPassword({ email: 'b@test.com', password: 'pass2' });
+      expect(e2).toBeNull();
+      expect(data.user!.id).toBe('user-b');
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 interface Post {
   id: number;
@@ -23,62 +25,84 @@ interface Post {
 
 export default function BlogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { client, auth } = useApp();
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { client } = useApp();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadPost();
-  }, [id]);
+  const postQuery = useQuery({
+    queryKey: ["posts", id],
+    queryFn: async () => {
+      const { data, error } = await client
+        .from("posts")
+        .select("*")
+        .eq("id", Number(id))
+        .single();
+      if (error) throw error;
+      return data as Post;
+    },
+    enabled: !!id,
+  });
 
-  async function loadPost() {
-    const { data, error } = await client
-      .from("posts")
-      .select("*")
-      .eq("id", Number(id))
-      .single();
+  const post = postQuery.data ?? null;
 
-    if (!error && data) {
-      const p = data as Post;
-      setPost(p);
-      setTitle(p.title);
-      setContent(p.content);
-    }
-    setLoading(false);
+  // Sync local edit state when post data loads
+  if (post && !editing && title === "" && content === "") {
+    setTitle(post.title);
+    setContent(post.content);
   }
 
-  async function handleSave() {
-    setSaving(true);
-    await client
-      .from("posts")
-      .update({ title, content })
-      .eq("id", Number(id));
-    setSaving(false);
-    setEditing(false);
-    loadPost();
-  }
+  const updatePost = useMutation({
+    mutationFn: async () => {
+      const { error } = await client
+        .from("posts")
+        .update({ title, content })
+        .eq("id", Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["posts", id] });
+      setEditing(false);
+    },
+    onError: (err) => {
+      Alert.alert("Error", err instanceof Error ? err.message : "Failed to save");
+    },
+  });
 
-  async function handleDelete() {
+  const deletePost = useMutation({
+    mutationFn: async () => {
+      const { error } = await client
+        .from("posts")
+        .delete()
+        .eq("id", Number(id));
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      router.back();
+    },
+    onError: (err) => {
+      Alert.alert("Error", err instanceof Error ? err.message : "Failed to delete");
+    },
+  });
+
+  function handleDelete() {
     Alert.alert("Delete Post", "Are you sure you want to delete this post?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: async () => {
-          await client.from("posts").delete().eq("id", Number(id));
-          router.back();
-        },
+        onPress: () => deletePost.mutate(),
       },
     ]);
   }
 
-  const isAuthor = post?.author_id === auth.user?.id;
+  const isAuthor = post?.author_id === user?.id;
 
-  if (loading) {
+  if (postQuery.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <Stack.Screen options={{ title: "Loading..." }} />
@@ -164,10 +188,10 @@ export default function BlogDetailScreen() {
 
             <Pressable
               className="bg-indigo-600 rounded-lg py-3.5 items-center active:bg-indigo-700"
-              onPress={handleSave}
-              disabled={saving}
+              onPress={() => updatePost.mutate()}
+              disabled={updatePost.isPending}
             >
-              {saving ? (
+              {updatePost.isPending ? (
                 <ActivityIndicator color="white" />
               ) : (
                 <Text className="text-white font-semibold text-base">

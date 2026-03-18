@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "@/lib/context";
 import { BlogCard } from "@/components/BlogCard";
 
@@ -22,35 +23,26 @@ interface Post {
 
 export default function BlogListScreen() {
   const { client } = useApp();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchPosts = useCallback(async () => {
-    const { data, error } = await client
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const postsQuery = useQuery({
+    queryKey: ["posts"],
+    queryFn: async () => {
+      const { data, error } = await client
+        .from("posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as Post[];
+    },
+  });
 
-    if (!error && data) {
-      setPosts(data as Post[]);
-    }
-    setLoading(false);
-    setRefreshing(false);
-  }, [client]);
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["posts"] });
+  }, [queryClient]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPosts();
-    }, [fetchPosts])
-  );
-
-  function handleRefresh() {
-    setRefreshing(true);
-    fetchPosts();
-  }
-
-  if (loading) {
+  if (postsQuery.isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50">
         <ActivityIndicator size="large" color="#4F46E5" />
@@ -61,12 +53,12 @@ export default function BlogListScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       <FlatList
-        data={posts}
+        data={postsQuery.data ?? []}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16 }}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={postsQuery.isFetching && !postsQuery.isLoading}
             onRefresh={handleRefresh}
             tintColor="#4F46E5"
           />

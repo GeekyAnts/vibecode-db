@@ -1,6 +1,12 @@
 import type { DatabaseAdapter, RpcOptions } from '../types';
 import type { QueryDescriptor, AdapterResponse } from '../../types';
+import type { SchemaDefinition } from '../../relational/types';
+import type { TableDefinition } from '../../relational/define-table';
+import { defineSchema } from '../../relational/define-table';
 import { applyFilters, applyModifiers, selectColumns } from './query-engine';
+import { parseSelect } from '../../relational/select-parser';
+import { SchemaRegistry } from '../../relational/schema-registry';
+import { RelationIndex, resolveRelations } from './relation-resolver';
 import { MockAuthAdapter } from './auth';
 import { MockStorageAdapter } from './storage';
 import { MockRealtimeAdapter } from './realtime';
@@ -9,6 +15,8 @@ export class MockAdapter implements DatabaseAdapter {
   private tables: Map<string, Record<string, any>[]> = new Map();
   private rpcs: Map<string, (args?: Record<string, any>) => any> = new Map();
   private autoId: Map<string, number> = new Map();
+  private schemaRegistry: SchemaRegistry = new SchemaRegistry();
+  private relationIndex: RelationIndex = new RelationIndex();
 
   auth = new MockAuthAdapter();
   storage = new MockStorageAdapter();
@@ -21,9 +29,32 @@ export class MockAdapter implements DatabaseAdapter {
     return this;
   }
 
+  /** Seed auth users without setting session or firing listeners */
+  seedUsers(users: Array<{ email: string; password: string; id?: string; user_metadata?: Record<string, any> }>) {
+    for (const u of users) {
+      this.auth.seedUser(u.email, u.password, { id: u.id, user_metadata: u.user_metadata });
+    }
+    return this;
+  }
+
   /** Register a mock RPC function */
   registerRpc(name: string, handler: (args?: Record<string, any>) => any) {
     this.rpcs.set(name, handler);
+    return this;
+  }
+
+  /** Set the schema definition for relational queries (raw object) */
+  setSchema(schema: SchemaDefinition): this;
+  /** Set the schema from defineTable() definitions */
+  setSchema(...tables: TableDefinition<any>[]): this;
+  setSchema(...args: [SchemaDefinition] | TableDefinition<any>[]): this {
+    // If first arg has a `tableName` property, it's a TableDefinition
+    if (args.length > 0 && typeof (args[0] as any).tableName === 'string') {
+      this.schemaRegistry.setSchema(defineSchema(...(args as TableDefinition<any>[])));
+    } else {
+      this.schemaRegistry.setSchema(args[0] as SchemaDefinition);
+    }
+    this.relationIndex.clear();
     return this;
   }
 
@@ -32,6 +63,8 @@ export class MockAdapter implements DatabaseAdapter {
     this.tables.clear();
     this.rpcs.clear();
     this.autoId.clear();
+    this.schemaRegistry = new SchemaRegistry();
+    this.relationIndex.clear();
     this.auth.reset();
     this.storage.reset();
     this.realtime.reset();
@@ -86,7 +119,28 @@ export class MockAdapter implements DatabaseAdapter {
     const table = this.getTable(descriptor.table);
     let result = applyFilters(table, descriptor.filters);
     result = applyModifiers(result, descriptor.modifiers);
-    result = selectColumns(result, descriptor.columns);
+
+    // Parse the select string for relational includes
+    const parsed = parseSelect(descriptor.columns ?? '*');
+
+    if (parsed.relations.length > 0 && this.schemaRegistry.hasSchema()) {
+      // Clear indexes on each query to reflect any data mutations since last query
+      this.relationIndex.clear();
+
+      // Resolve relations recursively
+      result = resolveRelations(
+        result,
+        descriptor.table,
+        parsed.relations,
+        this.schemaRegistry,
+        (name) => this.getTable(name),
+        this.relationIndex,
+        parsed.columns,
+      );
+    } else {
+      // No relations — use simple column selection
+      result = selectColumns(result, descriptor.columns);
+    }
 
     const count = descriptor.modifiers.count ? table.length : undefined;
 

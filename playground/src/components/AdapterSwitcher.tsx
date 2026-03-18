@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { AdapterType } from '../stories';
 import { Badge } from '@/components/ui/badge';
 
@@ -15,15 +14,36 @@ interface AdapterSwitcherProps {
   onChange: (config: AdapterConfig) => void;
 }
 
-const adapters: { type: AdapterType; label: string; description: string }[] = [
-  { type: 'mock', label: 'Mock', description: 'In-memory (no setup required)' },
-  { type: 'supabase', label: 'Supabase', description: 'Requires URL + Key' },
-  { type: 'pocketbase', label: 'PocketBase', description: 'Requires server URL' },
-  { type: 'rest', label: 'REST', description: 'Requires base URL' },
+// Read credentials from env at module level
+// Use service key for playground so storage/admin operations work
+const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? '';
+const ENV_SUPABASE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const ENV_POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL ?? '';
+
+const adapters: { type: AdapterType; label: string }[] = [
+  { type: 'mock', label: 'Mock' },
+  { type: 'supabase', label: 'Supabase' },
+  { type: 'pocketbase', label: 'PocketBase' },
+  { type: 'rest', label: 'REST' },
 ];
 
+function isReady(config: AdapterConfig): boolean {
+  switch (config.type) {
+    case 'mock':
+      return true;
+    case 'supabase':
+      return !!(config.supabaseUrl && config.supabaseKey);
+    case 'pocketbase':
+      return !!config.pocketbaseUrl;
+    case 'rest':
+      return !!config.restBaseUrl;
+    default:
+      return false;
+  }
+}
+
 export function AdapterSwitcher({ config, onChange }: AdapterSwitcherProps) {
-  const [showConfig, setShowConfig] = useState(false);
+  const ready = isReady(config);
 
   return (
     <div className="border-b border-border bg-muted/30">
@@ -34,9 +54,16 @@ export function AdapterSwitcher({ config, onChange }: AdapterSwitcherProps) {
             <button
               key={a.type}
               onClick={() => {
-                onChange({ ...config, type: a.type });
-                if (a.type !== 'mock') setShowConfig(true);
-                else setShowConfig(false);
+                const next: AdapterConfig = { ...config, type: a.type };
+                // Auto-fill from env when switching
+                if (a.type === 'supabase' && ENV_SUPABASE_URL) {
+                  next.supabaseUrl = ENV_SUPABASE_URL;
+                  next.supabaseKey = ENV_SUPABASE_KEY;
+                }
+                if (a.type === 'pocketbase' && ENV_POCKETBASE_URL) {
+                  next.pocketbaseUrl = ENV_POCKETBASE_URL;
+                }
+                onChange(next);
               }}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                 config.type === a.type
@@ -48,63 +75,12 @@ export function AdapterSwitcher({ config, onChange }: AdapterSwitcherProps) {
             </button>
           ))}
         </div>
-        {config.type !== 'mock' && (
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            {showConfig ? 'Hide' : 'Configure'}
-          </button>
-        )}
-        {config.type === 'mock' && (
+        {ready && (
           <Badge variant="outline" className="ml-auto text-[10px] text-green-600 border-green-600/30">
             Ready
           </Badge>
         )}
       </div>
-
-      {showConfig && config.type === 'supabase' && (
-        <div className="px-4 pb-3 space-y-2">
-          <input
-            type="text"
-            placeholder="Supabase URL (https://xxx.supabase.co)"
-            value={config.supabaseUrl ?? ''}
-            onChange={(e) => onChange({ ...config, supabaseUrl: e.target.value })}
-            className="w-full px-3 py-1.5 text-xs font-mono rounded border border-input bg-background placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-          />
-          <input
-            type="text"
-            placeholder="Supabase Anon Key"
-            value={config.supabaseKey ?? ''}
-            onChange={(e) => onChange({ ...config, supabaseKey: e.target.value })}
-            className="w-full px-3 py-1.5 text-xs font-mono rounded border border-input bg-background placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-      )}
-
-      {showConfig && config.type === 'pocketbase' && (
-        <div className="px-4 pb-3">
-          <input
-            type="text"
-            placeholder="PocketBase URL (http://127.0.0.1:8090)"
-            value={config.pocketbaseUrl ?? ''}
-            onChange={(e) => onChange({ ...config, pocketbaseUrl: e.target.value })}
-            className="w-full px-3 py-1.5 text-xs font-mono rounded border border-input bg-background placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-      )}
-
-      {showConfig && config.type === 'rest' && (
-        <div className="px-4 pb-3">
-          <input
-            type="text"
-            placeholder="REST Base URL (https://api.example.com)"
-            value={config.restBaseUrl ?? ''}
-            onChange={(e) => onChange({ ...config, restBaseUrl: e.target.value })}
-            className="w-full px-3 py-1.5 text-xs font-mono rounded border border-input bg-background placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-      )}
     </div>
   );
 }

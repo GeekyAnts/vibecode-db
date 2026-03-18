@@ -1,10 +1,12 @@
 import { Redirect } from "expo-router";
-import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 export default function Index() {
-  const { auth } = useApp();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (auth.isAuthenticated) {
+  if (isLoading) return null;
+
+  if (isAuthenticated) {
     return <Redirect href="/(tabs)" />;
   }
 

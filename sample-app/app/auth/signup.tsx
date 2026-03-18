@@ -9,15 +9,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Link, router } from "expo-router";
-import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 export default function SignUpScreen() {
-  const { signUp, adapterType } = useApp();
+  const { signUp } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   async function handleSignUp() {
     if (!email || !password) {
@@ -28,15 +27,15 @@ export default function SignUpScreen() {
       setError("Passwords do not match");
       return;
     }
-    setLoading(true);
     setError(null);
-    const err = await signUp(email, password);
-    setLoading(false);
-    if (err) {
-      setError(err);
-    } else {
-      router.replace("/(tabs)");
-    }
+    signUp.mutate(
+      { email, password },
+      {
+        onSuccess: () => router.replace("/(tabs)"),
+        onError: (err) =>
+          setError(err instanceof Error ? err.message : "Sign up failed"),
+      }
+    );
   }
 
   return (
@@ -52,11 +51,6 @@ export default function SignUpScreen() {
           <Text className="text-base text-gray-500 mt-2">
             Sign up to get started
           </Text>
-          <View className="mt-3 bg-indigo-50 rounded-lg px-3 py-2 self-start">
-            <Text className="text-xs text-indigo-600 font-medium">
-              Adapter: {adapterType}
-            </Text>
-          </View>
         </View>
 
         {error && (
@@ -109,9 +103,9 @@ export default function SignUpScreen() {
         <Pressable
           className="bg-indigo-600 rounded-lg py-3.5 items-center active:bg-indigo-700"
           onPress={handleSignUp}
-          disabled={loading}
+          disabled={signUp.isPending}
         >
-          {loading ? (
+          {signUp.isPending ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white font-semibold text-base">

@@ -9,29 +9,28 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Link, router } from "expo-router";
-import { useApp } from "@/lib/context";
+import { useAuth } from "@/hooks";
 
 export default function LoginScreen() {
-  const { signIn, adapterType } = useApp();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
     }
-    setLoading(true);
     setError(null);
-    const err = await signIn(email, password);
-    setLoading(false);
-    if (err) {
-      setError(err);
-    } else {
-      router.replace("/(tabs)");
-    }
+    signIn.mutate(
+      { email, password },
+      {
+        onSuccess: () => router.replace("/(tabs)"),
+        onError: (err) =>
+          setError(err instanceof Error ? err.message : "Sign in failed"),
+      }
+    );
   }
 
   return (
@@ -45,11 +44,6 @@ export default function LoginScreen() {
           <Text className="text-base text-gray-500 mt-2">
             Sign in to your account
           </Text>
-          <View className="mt-3 bg-indigo-50 rounded-lg px-3 py-2 self-start">
-            <Text className="text-xs text-indigo-600 font-medium">
-              Adapter: {adapterType}
-            </Text>
-          </View>
         </View>
 
         {error && (
@@ -88,9 +82,9 @@ export default function LoginScreen() {
         <Pressable
           className="bg-indigo-600 rounded-lg py-3.5 items-center active:bg-indigo-700"
           onPress={handleLogin}
-          disabled={loading}
+          disabled={signIn.isPending}
         >
-          {loading ? (
+          {signIn.isPending ? (
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-white font-semibold text-base">Sign In</Text>
@@ -105,14 +99,6 @@ export default function LoginScreen() {
             </Pressable>
           </Link>
         </View>
-
-        <Link href="/auth/adapter" asChild>
-          <Pressable className="mt-8 items-center">
-            <Text className="text-gray-400 text-sm underline">
-              Change adapter
-            </Text>
-          </Pressable>
-        </Link>
       </View>
     </KeyboardAvoidingView>
   );
