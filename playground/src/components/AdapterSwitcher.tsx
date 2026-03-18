@@ -15,8 +15,9 @@ interface AdapterSwitcherProps {
 }
 
 // Read credentials from env at module level
+// Use service key for playground so storage/admin operations work
 const ENV_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? '';
-const ENV_SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY ?? '';
+const ENV_SUPABASE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const ENV_POCKETBASE_URL = import.meta.env.VITE_POCKETBASE_URL ?? '';
 
 const adapters: { type: AdapterType; label: string }[] = [

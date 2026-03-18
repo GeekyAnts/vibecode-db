@@ -19,7 +19,7 @@ export function getEnvConfig(): AdapterConfig {
   return {
     type,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || undefined,
-    supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_KEY || undefined,
+    supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || undefined,
     pocketbaseUrl: process.env.EXPO_PUBLIC_POCKETBASE_URL || undefined,
   };
 }

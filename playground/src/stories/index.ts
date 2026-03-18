@@ -815,12 +815,16 @@ return { signedOut: data.session === null };`,
     category: 'Storage',
     type: 'example',
     description: 'Create buckets and list them.',
-    code: `await client.storage.createBucket('avatars', { public: true });
-await client.storage.createBucket('documents');
+    code: `const r1 = await client.storage.createBucket('avatars', { public: true });
+const r2 = await client.storage.createBucket('documents');
 
 const { data, error } = await client.storage.listBuckets();
 
-return { data, error };`,
+return {
+  created: { avatars: r1.error?.message ?? 'ok', documents: r2.error?.message ?? 'ok' },
+  buckets: data,
+  error
+};`,
   },
   {
     id: 'storage-upload',
