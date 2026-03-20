@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "vibecode-db-sample",
+    "slug": "vibecode-db-sample",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "vibecodedb",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

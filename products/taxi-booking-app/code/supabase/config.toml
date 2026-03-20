@@ -1,0 +1,32 @@
+[api]
+port = 54321
+schemas = ["public", "storage", "auth"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "exp://localhost:8081"
+additional_redirect_urls = ["exp://localhost:8081"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.sms]
+enable_signup = false

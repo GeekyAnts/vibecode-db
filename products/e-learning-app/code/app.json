@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "E-Learning App",
+    "slug": "e-learning-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "e-learning-app",
+    "owner": "e-learning-app",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.elearningapp"
+    },
+    "android": {
+      "package": "com.elearningapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

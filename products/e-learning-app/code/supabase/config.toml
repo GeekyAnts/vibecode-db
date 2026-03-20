@@ -1,0 +1,39 @@
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "exp://localhost:8081"
+additional_redirect_urls = ["exp://localhost:8081"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[auth.external.apple]
+enabled = false
+
+[auth.external.google]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[realtime]
+enabled = true

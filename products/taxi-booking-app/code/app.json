@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Taxi Booking App",
+    "slug": "taxi-booking-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "taxi-booking-app",
+    "owner": "taxi-booking-app",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.taxibookingapp"
+    },
+    "android": {
+      "package": "com.taxibookingapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
