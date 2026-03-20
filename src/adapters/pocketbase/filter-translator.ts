@@ -14,7 +14,8 @@ export function translateFilters(filters: Filter[]): string {
 
 function translateFilter(filter: Filter): string {
   if (filter.operator === 'or') {
-    return `(${filter.value})`;
+    // Parse PostgREST OR syntax: "col.op.val,col.op.val"
+    return translateOrFilter(filter.value);
   }
 
   const col = filter.column;
@@ -57,10 +58,10 @@ function translateFilter(filter: Filter): string {
       break;
     case 'in':
       if (Array.isArray(filter.value)) {
-        const items = filter.value.map(formatValue).join(', ');
-        expr = `${col} ?= ${items}`;
+        const orParts = filter.value.map((v: any) => `${col} = ${formatValue(v)}`);
+        expr = `(${orParts.join(' || ')})`;
       } else {
-        expr = `${col} ?= ${val}`;
+        expr = `${col} = ${val}`;
       }
       break;
     case 'contains':
@@ -95,4 +96,28 @@ function formatValue(value: any): string {
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number') return String(value);
   return `"${String(value)}"`;
+}
+
+/** Map PostgREST operators to PocketBase operators */
+const OP_MAP: Record<string, string> = {
+  eq: '=', neq: '!=', gt: '>', gte: '>=', lt: '<', lte: '<=',
+  like: '~', ilike: '~', is: '=',
+};
+
+/**
+ * Parse PostgREST OR syntax into PocketBase filter.
+ * Input:  "status.eq.done,status.eq.in_progress"
+ * Output: "(status = \"done\" || status = \"in_progress\")"
+ */
+function translateOrFilter(value: string): string {
+  const parts = value.split(',').map((part) => {
+    const segments = part.trim().split('.');
+    if (segments.length < 3) return part;
+    const col = segments[0];
+    const op = segments[1];
+    const val = segments.slice(2).join('.');
+    const pbOp = OP_MAP[op] || '=';
+    return `${col} ${pbOp} ${formatValue(val)}`;
+  });
+  return `(${parts.join(' || ')})`;
 }

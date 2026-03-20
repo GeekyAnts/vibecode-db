@@ -456,12 +456,16 @@ return { data, error };`,
     category: 'CRUD',
     type: 'example',
     description: 'Insert a new record into a table.',
-    code: `const { data, error } = await client
+    code: `// Fetch real IDs
+const { data: users } = await client.from('users').select('id').limit(1);
+const { data: projects } = await client.from('projects').select('id').limit(1);
+
+const { data, error } = await client
   .from('activity_logs')
   .insert({
-    user_id: '11111111-1111-1111-1111-111111111111',
+    user_id: users?.[0]?.id,
     entity_type: 'project',
-    entity_id: 'aaaa1111-1111-1111-1111-111111111111',
+    entity_id: projects?.[0]?.id,
     action: 'viewed',
   });
 
@@ -473,19 +477,23 @@ return { data, error };`,
     category: 'CRUD',
     type: 'example',
     description: 'Batch insert multiple records.',
-    code: `const { data, error } = await client
+    code: `// Fetch real IDs
+const { data: users } = await client.from('users').select('id').limit(2);
+const { data: tasks } = await client.from('tasks').select('id').limit(2);
+
+const { data, error } = await client
   .from('activity_logs')
   .insert([
     {
-      user_id: '11111111-1111-1111-1111-111111111111',
+      user_id: users?.[0]?.id,
       entity_type: 'task',
-      entity_id: 'bbbb1111-1111-1111-1111-111111111111',
+      entity_id: tasks?.[0]?.id ?? users?.[0]?.id,
       action: 'viewed',
     },
     {
-      user_id: '22222222-2222-2222-2222-222222222222',
+      user_id: users?.[1]?.id ?? users?.[0]?.id,
       entity_type: 'task',
-      entity_id: 'bbbb2222-2222-2222-2222-222222222222',
+      entity_id: tasks?.[1]?.id ?? tasks?.[0]?.id ?? users?.[0]?.id,
       action: 'updated',
     },
   ]);
@@ -511,13 +519,17 @@ return { data, error };`,
     category: 'CRUD',
     type: 'example',
     description: 'Insert or update based on conflict column.',
-    code: `const { data, error } = await client
+    code: `// Fetch a real user to upsert
+const { data: users } = await client.from('users').select('id, email').limit(1);
+const user = users?.[0];
+
+const { data, error } = await client
   .from('users')
   .upsert(
     {
-      id: '11111111-1111-1111-1111-111111111111',
+      id: user?.id,
       name: 'Alice (Updated)',
-      email: 'alice@test.com',
+      email: user?.email ?? 'alice@test.com',
     },
     { onConflict: 'id' }
   );
@@ -832,20 +844,23 @@ return {
     category: 'Storage',
     type: 'example',
     description: 'Upload a file and download it back.',
-    code: `await client.storage.createBucket('files');
+    code: `// Create bucket (required for Mock/Supabase, no-op for PocketBase)
+await client.storage.createBucket('documents');
 
-await client.storage.from('files').upload(
-  'hello.txt',
-  'Hello, World!'
-);
+// Upload a file
+const { data: uploadData } = await client.storage
+  .from('documents')
+  .upload('hello.txt', 'Hello, World!');
 
+// Download using the path returned by upload
+const path = uploadData?.path ?? 'hello.txt';
 const { data: blob } = await client.storage
-  .from('files')
-  .download('hello.txt');
+  .from('documents')
+  .download(path);
 
 const text = blob ? await blob.text() : null;
 
-return { downloadedContent: text };`,
+return { uploadedPath: path, downloadedContent: text };`,
   },
   {
     id: 'storage-list',
@@ -853,15 +868,17 @@ return { downloadedContent: text };`,
     category: 'Storage',
     type: 'example',
     description: 'Upload files and list them.',
-    code: `await client.storage.createBucket('docs');
+    code: `// Create bucket (required for Mock/Supabase, no-op for PocketBase)
+await client.storage.createBucket('documents');
 
-await client.storage.from('docs').upload('readme.md', '# Hello');
-await client.storage.from('docs').upload('guide.md', '# Guide');
-await client.storage.from('docs').upload('api.md', '# API');
+// Upload files
+const r1 = await client.storage.from('documents').upload('readme.md', '# Hello');
+const r2 = await client.storage.from('documents').upload('guide.md', '# Guide');
+const r3 = await client.storage.from('documents').upload('api.md', '# API');
 
-const { data, error } = await client.storage.from('docs').list();
+const { data, error } = await client.storage.from('documents').list();
 
-return { data, error };`,
+return { uploads: { r1, r2, r3 }, files: data, error };`,
   },
   {
     id: 'storage-public-url',
@@ -869,12 +886,18 @@ return { data, error };`,
     category: 'Storage',
     type: 'example',
     description: 'Get the public URL for a file.',
-    code: `await client.storage.createBucket('images', { public: true });
-await client.storage.from('images').upload('photo.jpg', 'binary-data');
+    code: `// Create bucket (required for Mock/Supabase, no-op for PocketBase)
+await client.storage.createBucket('avatars');
 
-const { data } = client.storage.from('images').getPublicUrl('photo.jpg');
+// Upload a file and get its public URL
+const { data: uploadData } = await client.storage
+  .from('avatars')
+  .upload('photo.jpg', 'binary-data');
 
-return { publicUrl: data.publicUrl };`,
+const path = uploadData?.path ?? 'photo.jpg';
+const { data } = client.storage.from('avatars').getPublicUrl(path);
+
+return { uploadedPath: path, publicUrl: data.publicUrl };`,
   },
 
   // ── Realtime ──────────────────────────────────────
