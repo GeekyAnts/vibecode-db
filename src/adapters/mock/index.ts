@@ -32,7 +32,18 @@ export class MockAdapter implements DatabaseAdapter {
   /** Seed auth users without setting session or firing listeners */
   seedUsers(users: Array<{ email: string; password: string; id?: string; user_metadata?: Record<string, any> }>) {
     for (const u of users) {
-      this.auth.seedUser(u.email, u.password, { id: u.id, user_metadata: u.user_metadata });
+      const authUser = this.auth.seedUser(u.email, u.password, { id: u.id, user_metadata: u.user_metadata });
+      // Also seed into the "users" table so from('users').select() works
+      const table = this.getTable('users');
+      // Avoid duplicates if seedUsers is called multiple times
+      if (!table.some(row => row.id === authUser.id)) {
+        table.push({
+          id: authUser.id,
+          email: authUser.email,
+          user_metadata: authUser.user_metadata,
+          created_at: authUser.created_at,
+        });
+      }
     }
     return this;
   }
