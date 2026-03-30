@@ -81,7 +81,7 @@ export class MockAdapter implements DatabaseAdapter {
     this.realtime.reset();
   }
 
-  private getTable(name: string): Record<string, any>[] {
+  getTable(name: string): Record<string, any>[] {
     if (!this.tables.has(name)) {
       this.tables.set(name, []);
     }

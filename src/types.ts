@@ -123,6 +123,12 @@ export interface RealtimePayload<T = any> {
 
 export type RealtimeCallback<T = any> = (payload: RealtimePayload<T>) => void;
 
+export interface ClientConfig {
+  /** When true, signInWithPassword / signUp are blocked unless { force: true } is passed */
+  authDisabled?: boolean;
+}
+
 export interface ClientOptions {
   adapter: import('./adapters/types').DatabaseAdapter;
+  config?: ClientConfig;
 }

@@ -19,7 +19,7 @@ export class VibeCodeClient {
     options: ClientOptions,
   ) {
     this.adapter = options.adapter;
-    this.auth = new AuthClient(this.adapter.auth);
+    this.auth = new AuthClient(this.adapter.auth, options.config);
     this.storage = new StorageClient(this.adapter.storage);
     this.realtime = new RealtimeClient(this.adapter.realtime);
     this.functions = new FunctionsClient(this.adapter.functions);
