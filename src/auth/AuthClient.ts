@@ -12,9 +12,8 @@ export class AuthClient {
 
   signUp(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
     if (this.config.authDisabled && !options?.overrideAuthDisabled) {
-      return Promise.resolve({
-        data: { user: null, session: null },
-        error: { message: 'Auth is disabled. Use { overrideAuthDisabled: true } to override.' },
+      return Promise.reject({
+        message: 'Auth is disabled. Use { overrideAuthDisabled: true } to override.',
       });
     }
     return this.adapter.signUp(credentials);
@@ -22,9 +21,8 @@ export class AuthClient {
 
   signInWithPassword(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
     if (this.config.authDisabled && !options?.overrideAuthDisabled) {
-      return Promise.resolve({
-        data: { user: null, session: null },
-        error: { message: 'Auth is disabled. Use { overrideAuthDisabled: true } to override.' },
+      return Promise.reject({
+        message: 'Auth is disabled. Use { overrideAuthDisabled: true } to override.',
       });
     }
     return this.adapter.signInWithPassword(credentials);
