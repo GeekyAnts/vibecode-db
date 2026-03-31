@@ -12,18 +12,14 @@ export class AuthClient {
 
   signUp(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
     if (this.config.authDisabled && !options?.overrideAuthDisabled) {
-      return Promise.reject({
-        message: 'Auth is disabled!',
-      });
+      return Promise.reject(new Error('Auth is disabled!'));
     }
     return this.adapter.signUp(credentials);
   }
 
   signInWithPassword(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
     if (this.config.authDisabled && !options?.overrideAuthDisabled) {
-      return Promise.reject({
-        message: 'Auth is disabled!',
-      });
+      return Promise.reject(new Error('Auth is disabled!'));
     }
     return this.adapter.signInWithPassword(credentials);
   }
