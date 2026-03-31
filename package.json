@@ -1,6 +1,6 @@
 {
   "name": "@vibecode-db/client",
-  "version": "3.0.0-alpha.7",
+  "version": "3.0.0",
   "publishConfig": {
     "access": "public"
   },
