@@ -7,9 +7,16 @@ import { applyFilters, applyModifiers, selectColumns } from './query-engine';
 import { parseSelect } from '../../relational/select-parser';
 import { SchemaRegistry } from '../../relational/schema-registry';
 import { RelationIndex, resolveRelations } from './relation-resolver';
-import { MockAuthAdapter } from './auth';
+import { MockAuthAdapter, type MockAuthOptions, type MockSessionStorage } from './auth';
 import { MockStorageAdapter } from './storage';
 import { MockRealtimeAdapter } from './realtime';
+
+export interface MockAdapterOptions {
+  /** Enable session persistence across page refreshes / app restarts. Default: true (matches Supabase) */
+  persistSession?: boolean;
+  /** Custom storage backend for session persistence. Defaults to localStorage on web. For React Native, pass AsyncStorage. */
+  storage?: MockSessionStorage;
+}
 
 export class MockAdapter implements DatabaseAdapter {
   private tables: Map<string, Record<string, any>[]> = new Map();
@@ -18,10 +25,17 @@ export class MockAdapter implements DatabaseAdapter {
   private schemaRegistry: SchemaRegistry = new SchemaRegistry();
   private relationIndex: RelationIndex = new RelationIndex();
 
-  auth = new MockAuthAdapter();
+  auth: MockAuthAdapter;
   storage = new MockStorageAdapter();
   realtime = new MockRealtimeAdapter();
   functions = new MockFunctionsAdapter();
+
+  constructor(options?: MockAdapterOptions) {
+    this.auth = new MockAuthAdapter({
+      persistSession: options?.persistSession,
+      storage: options?.storage,
+    });
+  }
 
   /** Seed a table with initial data */
   seed(table: string, data: Record<string, any>[]) {
@@ -371,6 +385,6 @@ class MockFunctionsAdapter {
   }
 }
 
-export { MockAuthAdapter } from './auth';
+export { MockAuthAdapter, type MockAuthOptions, type MockSessionStorage } from './auth';
 export { MockStorageAdapter } from './storage';
 export { MockRealtimeAdapter } from './realtime';
