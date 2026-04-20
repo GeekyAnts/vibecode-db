@@ -67,6 +67,7 @@ export interface AdapterResponse<T = any> {
 
 export interface AdapterError {
   message: string;
+  reason?: string;
   details?: string;
   hint?: string;
   code?: string;

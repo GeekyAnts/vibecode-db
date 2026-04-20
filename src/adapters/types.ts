@@ -26,7 +26,7 @@ export interface RpcOptions {
 export interface AuthAdapter {
   signUp(credentials: { email?: string; phone?: string; password: string }): Promise<AuthResponse>;
   signInWithPassword(credentials: { email?: string; phone?: string; password: string }): Promise<AuthResponse>;
-  signOut(): Promise<{ error: { message: string } | null }>;
+  signOut(): Promise<{ error: { message: string; reason?: string } | null }>;
   getUser(): Promise<{ data: { user: AuthUser | null }; error: { message: string } | null }>;
   getSession(): Promise<{ data: { session: AuthSession | null }; error: { message: string } | null }>;
   onAuthStateChange(callback: (event: string, session: AuthSession | null) => void): {
