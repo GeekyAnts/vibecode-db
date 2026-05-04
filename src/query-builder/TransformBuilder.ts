@@ -7,6 +7,11 @@ export class TransformBuilder<T = any> extends FilterBuilder<T> {
     super(adapter, descriptor);
   }
 
+  select(columns = '*'): this {
+    this.descriptor.columns = columns;
+    return this;
+  }
+
   order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): this {
     if (!this.descriptor.modifiers.order) {
       this.descriptor.modifiers.order = [];

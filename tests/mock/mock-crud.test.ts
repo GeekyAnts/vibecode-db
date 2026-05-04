@@ -100,8 +100,20 @@ describe('Mock Adapter CRUD', () => {
   });
 
   describe('INSERT', () => {
-    it('inserts a single record', async () => {
+    it('returns null data without .select() (Supabase return=minimal)', async () => {
       const { data, error } = await client.from('users').insert({ name: 'Diana', age: 28, status: 'active' });
+      expect(error).toBeNull();
+      expect(data).toBeNull();
+
+      const { data: all } = await client.from('users').select('*');
+      expect(all).toHaveLength(4);
+    });
+
+    it('inserts a single record and returns it with .select()', async () => {
+      const { data, error } = await client
+        .from('users')
+        .insert({ name: 'Diana', age: 28, status: 'active' })
+        .select();
       expect(error).toBeNull();
       expect((data as any[])[0].name).toBe('Diana');
 
@@ -110,10 +122,13 @@ describe('Mock Adapter CRUD', () => {
     });
 
     it('inserts multiple records', async () => {
-      const { data } = await client.from('users').insert([
-        { name: 'Diana', age: 28, status: 'active' },
-        { name: 'Eve', age: 22, status: 'active' },
-      ]);
+      const { data } = await client
+        .from('users')
+        .insert([
+          { name: 'Diana', age: 28, status: 'active' },
+          { name: 'Eve', age: 22, status: 'active' },
+        ])
+        .select();
       expect(data).toHaveLength(2);
 
       const { data: all } = await client.from('users').select('*');
@@ -121,7 +136,10 @@ describe('Mock Adapter CRUD', () => {
     });
 
     it('auto-generates id if not provided', async () => {
-      const { data } = await client.from('users').insert({ name: 'Frank', age: 40, status: 'active' });
+      const { data } = await client
+        .from('users')
+        .insert({ name: 'Frank', age: 40, status: 'active' })
+        .select();
       expect((data as any[])[0].id).toBeDefined();
     });
   });

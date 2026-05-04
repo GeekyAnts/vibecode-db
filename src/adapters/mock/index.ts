@@ -241,11 +241,19 @@ export class MockAdapter implements DatabaseAdapter {
 
     const count = descriptor.count ? inserted.length : undefined;
 
-    if (descriptor.modifiers.single) {
-      return { data: inserted[0] as T, error: null, count, status: 201, statusText: 'Created' };
+    // Supabase parity: without .select() in the chain, PostgREST sends
+    // Prefer: return=minimal and the server returns no body.
+    if (descriptor.columns === undefined) {
+      return { data: null as T, error: null, count, status: 201, statusText: 'Created' };
     }
 
-    return { data: inserted as T, error: null, count, status: 201, statusText: 'Created' };
+    const projected = selectColumns(inserted, descriptor.columns);
+
+    if (descriptor.modifiers.single) {
+      return { data: projected[0] as T, error: null, count, status: 201, statusText: 'Created' };
+    }
+
+    return { data: projected as T, error: null, count, status: 201, statusText: 'Created' };
   }
 
   private executeUpdate<T>(descriptor: QueryDescriptor): AdapterResponse<T> {
@@ -270,14 +278,20 @@ export class MockAdapter implements DatabaseAdapter {
 
     const count = descriptor.count ? updated.length : undefined;
 
-    if (descriptor.modifiers.single) {
-      if (updated.length === 0) {
-        return { data: null, error: { message: 'No rows found', code: 'PGRST116' }, status: 406, statusText: 'Not Acceptable' };
-      }
-      return { data: updated[0] as T, error: null, count, status: 200, statusText: 'OK' };
+    if (descriptor.columns === undefined) {
+      return { data: null as T, error: null, count, status: 200, statusText: 'OK' };
     }
 
-    return { data: updated as T, error: null, count, status: 200, statusText: 'OK' };
+    const projected = selectColumns(updated, descriptor.columns);
+
+    if (descriptor.modifiers.single) {
+      if (projected.length === 0) {
+        return { data: null, error: { message: 'No rows found', code: 'PGRST116' }, status: 406, statusText: 'Not Acceptable' };
+      }
+      return { data: projected[0] as T, error: null, count, status: 200, statusText: 'OK' };
+    }
+
+    return { data: projected as T, error: null, count, status: 200, statusText: 'OK' };
   }
 
   private executeUpsert<T>(descriptor: QueryDescriptor): AdapterResponse<T> {
@@ -321,7 +335,21 @@ export class MockAdapter implements DatabaseAdapter {
     }
 
     const count = descriptor.count ? upserted.length : undefined;
-    return { data: upserted as T, error: null, count, status: 201, statusText: 'Created' };
+
+    if (descriptor.columns === undefined) {
+      return { data: null as T, error: null, count, status: 201, statusText: 'Created' };
+    }
+
+    const projected = selectColumns(upserted, descriptor.columns);
+
+    if (descriptor.modifiers.single) {
+      if (projected.length === 0) {
+        return { data: null, error: { message: 'No rows found', code: 'PGRST116' }, status: 406, statusText: 'Not Acceptable' };
+      }
+      return { data: projected[0] as T, error: null, count, status: 201, statusText: 'Created' };
+    }
+
+    return { data: projected as T, error: null, count, status: 201, statusText: 'Created' };
   }
 
   private executeDelete<T>(descriptor: QueryDescriptor): AdapterResponse<T> {
@@ -347,7 +375,21 @@ export class MockAdapter implements DatabaseAdapter {
     }
 
     const count = descriptor.count ? deleted.length : undefined;
-    return { data: deleted as T, error: null, count, status: 200, statusText: 'OK' };
+
+    if (descriptor.columns === undefined) {
+      return { data: null as T, error: null, count, status: 200, statusText: 'OK' };
+    }
+
+    const projected = selectColumns(deleted, descriptor.columns);
+
+    if (descriptor.modifiers.single) {
+      if (projected.length === 0) {
+        return { data: null, error: { message: 'No rows found', code: 'PGRST116' }, status: 406, statusText: 'Not Acceptable' };
+      }
+      return { data: projected[0] as T, error: null, count, status: 200, statusText: 'OK' };
+    }
+
+    return { data: projected as T, error: null, count, status: 200, statusText: 'OK' };
   }
 
   async executeRpc<T = any>(fn: string, args?: Record<string, any>, _options?: RpcOptions): Promise<AdapterResponse<T>> {

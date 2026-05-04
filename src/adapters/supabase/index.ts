@@ -62,15 +62,19 @@ export class SupabaseAdapter implements DatabaseAdapter {
         break;
       case 'insert':
         query = query.insert(descriptor.values);
+        if (descriptor.columns) query = query.select(descriptor.columns);
         break;
       case 'update':
         query = query.update(descriptor.values);
+        if (descriptor.columns) query = query.select(descriptor.columns);
         break;
       case 'upsert':
         query = query.upsert(descriptor.values, { onConflict: descriptor.onConflict });
+        if (descriptor.columns) query = query.select(descriptor.columns);
         break;
       case 'delete':
         query = query.delete();
+        if (descriptor.columns) query = query.select(descriptor.columns);
         break;
     }
 
