@@ -1,12 +1,17 @@
 import { Routes, Route, Navigate } from 'react-router'
-import { stories } from './stories'
 import App from './App'
+import { Landing } from './components/landing/Landing'
+import { Seo } from './components/Seo'
 
 export function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/:storyId" element={<App />} />
-      <Route path="*" element={<Navigate to={`/${stories[0].id}`} replace />} />
-    </Routes>
+    <>
+      <Seo />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/:storyId" element={<App />} />
+        <Route path="*" element={<Navigate to="/doc-intro" replace />} />
+      </Routes>
+    </>
   )
 }

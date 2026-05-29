@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { stories, categories } from '../stories';
 import type { Story } from '../stories';
 import { Badge } from '@/components/ui/badge';
+import { Logo } from './landing/Logo';
 
 interface SidebarProps {
   selectedStory: Story;
@@ -25,7 +26,10 @@ export function Sidebar({ selectedStory, onSelect }: SidebarProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex-shrink-0">
-        <h1 className="text-sm font-semibold tracking-tight flex items-center gap-1.5">@vibecode-db/client <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">v3</span></h1>
+        <Link to="/" className="group flex items-center gap-2" title="Back to home">
+          <Logo size="sm" showText={false} />
+          <h1 className="text-sm font-semibold tracking-tight flex items-center gap-1.5 group-hover:opacity-80 transition-opacity">@vibecode-db/client <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">v3</span></h1>
+        </Link>
         <p className="text-xs text-muted-foreground mt-0.5">Playground & Docs</p>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0">

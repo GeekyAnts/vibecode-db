@@ -14,3 +14,7 @@ export function render(url: string) {
 export function getStories() {
   return stories.map(s => ({ id: s.id, title: s.title, description: s.description }))
 }
+
+// Re-exported so the build-time prerender resolves SEO from the same source as
+// the runtime <Seo /> component.
+export { getSeo } from './lib/seo'
