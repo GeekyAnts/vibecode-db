@@ -1,4 +1,5 @@
 import { createClient, defineTable, hasMany, belongsTo } from '@vibecode-db/client';
+import type { TableDefinition } from '@vibecode-db/client';
 import { MockAdapter } from '@vibecode-db/client/adapters/mock';
 import type { AdapterType } from './index';
 
@@ -33,7 +34,7 @@ const C3 = 'cccc3333-3333-3333-3333-333333333333';
 
 // ── Table definitions (matches Supabase migrations) ──
 
-const usersTable = defineTable('users', {
+const usersTable: TableDefinition = defineTable('users', {
   id: 'uuid',
   email: 'text',
   name: 'text',
@@ -44,7 +45,7 @@ const usersTable = defineTable('users', {
   activity_logs: hasMany(() => activityLogsTable, 'user_id'),
 });
 
-const profilesTable = defineTable('profiles', {
+const profilesTable: TableDefinition = defineTable('profiles', {
   id: 'uuid',
   user_id: 'uuid',
   avatar_url: 'text',
@@ -53,7 +54,7 @@ const profilesTable = defineTable('profiles', {
   user: belongsTo(() => usersTable, 'user_id'),
 });
 
-const projectsTable = defineTable('projects', {
+const projectsTable: TableDefinition = defineTable('projects', {
   id: 'uuid',
   owner_id: 'uuid',
   name: 'text',
@@ -64,7 +65,7 @@ const projectsTable = defineTable('projects', {
   project_members: hasMany(() => projectMembersTable, 'project_id'),
 });
 
-const tasksTable = defineTable('tasks', {
+const tasksTable: TableDefinition = defineTable('tasks', {
   id: 'uuid',
   project_id: 'uuid',
   title: 'text',
@@ -74,7 +75,7 @@ const tasksTable = defineTable('tasks', {
   comments: hasMany(() => commentsTable, 'task_id'),
 });
 
-const projectMembersTable = defineTable('project_members', {
+const projectMembersTable: TableDefinition = defineTable('project_members', {
   id: 'uuid',
   user_id: 'uuid',
   project_id: 'uuid',
@@ -84,7 +85,7 @@ const projectMembersTable = defineTable('project_members', {
   project: belongsTo(() => projectsTable, 'project_id'),
 });
 
-const commentsTable = defineTable('comments', {
+const commentsTable: TableDefinition = defineTable('comments', {
   id: 'uuid',
   user_id: 'uuid',
   task_id: 'uuid',
@@ -95,7 +96,7 @@ const commentsTable = defineTable('comments', {
   task: belongsTo(() => tasksTable, 'task_id'),
 });
 
-const activityLogsTable = defineTable('activity_logs', {
+const activityLogsTable: TableDefinition = defineTable('activity_logs', {
   id: 'uuid',
   user_id: 'uuid',
   entity_type: 'text',
