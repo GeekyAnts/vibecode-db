@@ -89,7 +89,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-white/5">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              © 2024 Vibecode DB. All rights reserved.
+              © {new Date().getFullYear()} Vibecode DB. All rights reserved.
             </div>
             <div className="text-sm text-muted-foreground">
               Created by{" "}

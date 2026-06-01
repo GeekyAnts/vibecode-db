@@ -76,12 +76,12 @@ export function VibecodeDBDiagram({
       {/* Connection line to Faker (dotted arrow down) */}
       <line x1="550" y1="410" x2="550" y2="450" stroke="#6366f1" strokeWidth="2" strokeDasharray="6,4" markerEnd="url(#arrowhead)" />
 
-      {/* Faker (Mock Data) - centered under Vibecode DB */}
+      {/* Mock (in-memory) - centered under Vibecode DB */}
       <g transform="translate(470, 460)">
         <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#8b5cf6" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#8b5cf6" />
-        <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">SQLite</text>
-        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Mock Data</text>
+        <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">Mock</text>
+        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">In-memory</text>
       </g>
 
       {/* Backend Services - moved further right */}
@@ -94,28 +94,28 @@ export function VibecodeDBDiagram({
         <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">PostgreSQL</text>
       </g>
 
-      {/* Firebase */}
+      {/* PocketBase */}
       <g transform="translate(850, 240)">
         <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#f59e0b" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#f59e0b" />
-        <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">Firebase</text>
-        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">NoSQL</text>
+        <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">PocketBase</text>
+        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Open Source BaaS</text>
       </g>
 
-      {/* REST API */}
+      {/* REST API (custom adapter) */}
       <g transform="translate(850, 340)">
         <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#3b82f6" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#3b82f6" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">REST API</text>
-        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">HTTP/JSON</text>
+        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Custom Adapter</text>
       </g>
 
-      {/* GraphQL */}
+      {/* GraphQL (custom adapter) */}
       <g transform="translate(850, 440)">
         <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#e91e63" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#e91e63" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">GraphQL</text>
-        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Query Language</text>
+        <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Custom Adapter</text>
       </g>
 
       {/* Arrow marker definition */}

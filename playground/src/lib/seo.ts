@@ -20,7 +20,7 @@ export interface SeoData {
 
 const LANDING_TITLE = 'Vibecode DB — The Frontend Database API Gateway'
 const LANDING_DESC =
-  'Build apps without waiting on a backend. Prototype instantly with runtime data, then connect to real backends (Supabase, Firebase, GraphQL, REST) without rewriting your front-end.'
+  'Build apps without waiting on a backend. Prototype instantly with in-memory data, then connect to real backends (Supabase, PocketBase, REST, GraphQL) without rewriting your front-end.'
 
 const SITE_NAME = 'Vibecode DB'
 

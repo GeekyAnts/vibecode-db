@@ -56,8 +56,8 @@ export function Landing() {
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Build apps without waiting on a backend. Prototype instantly with runtime data, then
-            connect to real backends (Supabase, Firebase, GraphQL, REST, …) without rewriting your
+            Build apps without waiting on a backend. Prototype instantly with in-memory data, then
+            connect to real backends (Supabase, PocketBase, REST, GraphQL, …) without rewriting your
             front-end.
           </p>
 
@@ -99,7 +99,7 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold">Start Fast</h3>
               <p className="text-muted-foreground">
-                Use runtime data (SQLite) adapters to simulate DB, auth, storage, and functions for
+                Use the in-memory Mock adapter to simulate DB, auth, storage, and functions for
                 rapid prototyping.
               </p>
             </CardContent>
@@ -112,7 +112,7 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold">Scale Seamlessly</h3>
               <p className="text-muted-foreground">
-                Map to Supabase, Firebase, GraphQL, REST without rewriting your front-end code.
+                Map to Supabase, PocketBase, REST, or GraphQL without rewriting your front-end code.
               </p>
             </CardContent>
           </Card>
@@ -164,20 +164,20 @@ export function Landing() {
               <h3 className="text-lg font-semibold text-primary">🚀 Prototype Phase</h3>
               <CodeBlock
                 code={`import { createClient } from '@vibecode-db/client'
+import { MockAdapter } from '@vibecode-db/client/adapters/mock'
 
-// Start with runtime data - no backend needed!
-const vibecode = createClient({
-  dbSpec,
-  adapter: (ctx) => new SQLiteWebAdapter(ctx, {sqliteOpts})
+// Start with in-memory data - no backend needed!
+const client = createClient('', '', {
+  adapter: new MockAdapter(),
 })
 
 // Your app works immediately
-const users = await vibecode
+const { data } = await client
   .from('users')
   .select('*')
-  .where('active', true)
+  .eq('status', 'active')
   .limit(10)`}
-                language="javascript"
+                language="typescript"
               />
             </div>
 
@@ -185,20 +185,20 @@ const users = await vibecode
               <h3 className="text-lg font-semibold text-primary">⚡ Production Phase</h3>
               <CodeBlock
                 code={`import { createClient } from '@vibecode-db/client'
+import { SupabaseAdapter } from '@vibecode-db/client/adapters/supabase'
 
-// Switch to real backend - same API!
-const vibecode = createClient({
-  dbSpec,
-  adapter (ctx) => new SupabaseAdapter(ctx, {supabaseOpts}),
+// Switch to a real backend - same API!
+const client = createClient(url, key, {
+  adapter: new SupabaseAdapter({ supabaseUrl: url, supabaseKey: key }),
 })
 
 // No code changes needed
-const users = await vibecode
+const { data } = await client
   .from('users')
   .select('*')
-  .where('active', true)
+  .eq('status', 'active')
   .limit(10)`}
-                language="javascript"
+                language="typescript"
               />
             </div>
           </div>
