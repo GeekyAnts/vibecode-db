@@ -13,7 +13,7 @@ export function VibecodeDBDiagram({
 }: VibecodeDBDiagramProps) {
   return (
     <svg
-      viewBox="80 120 950 480"
+      viewBox="80 120 990 480"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       width={width}
@@ -88,7 +88,7 @@ export function VibecodeDBDiagram({
 
       {/* Supabase */}
       <g transform="translate(850, 140)">
-        <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#10b981" strokeWidth="3" />
+        <rect x="0" y="0" width="200" height="80" rx="16" fill="#1a1a1a" stroke="#10b981" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#10b981" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">Supabase</text>
         <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">PostgreSQL</text>
@@ -96,7 +96,7 @@ export function VibecodeDBDiagram({
 
       {/* PocketBase */}
       <g transform="translate(850, 240)">
-        <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#f59e0b" strokeWidth="3" />
+        <rect x="0" y="0" width="200" height="80" rx="16" fill="#1a1a1a" stroke="#f59e0b" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#f59e0b" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">PocketBase</text>
         <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Open Source BaaS</text>
@@ -104,7 +104,7 @@ export function VibecodeDBDiagram({
 
       {/* REST API (custom adapter) */}
       <g transform="translate(850, 340)">
-        <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#3b82f6" strokeWidth="3" />
+        <rect x="0" y="0" width="200" height="80" rx="16" fill="#1a1a1a" stroke="#3b82f6" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#3b82f6" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">REST API</text>
         <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Custom Adapter</text>
@@ -112,7 +112,7 @@ export function VibecodeDBDiagram({
 
       {/* GraphQL (custom adapter) */}
       <g transform="translate(850, 440)">
-        <rect x="0" y="0" width="160" height="80" rx="16" fill="#1a1a1a" stroke="#e91e63" strokeWidth="3" />
+        <rect x="0" y="0" width="200" height="80" rx="16" fill="#1a1a1a" stroke="#e91e63" strokeWidth="3" />
         <circle cx="30" cy="40" r="12" fill="#e91e63" />
         <text x="55" y="35" fill="#e5e5e5" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="600">GraphQL</text>
         <text x="55" y="52" fill="#a3a3a3" fontFamily="Inter, system-ui, sans-serif" fontSize="12">Custom Adapter</text>
