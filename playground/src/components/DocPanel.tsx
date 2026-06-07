@@ -7,8 +7,8 @@ interface DocPanelProps {
 
 export function DocPanel({ content }: DocPanelProps) {
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-8 py-8 prose-container">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="max-w-3xl min-w-0 mx-auto px-5 py-6 sm:px-8 sm:py-8 prose-container">
         <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
