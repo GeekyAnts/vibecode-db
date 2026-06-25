@@ -7,9 +7,16 @@ import { applyFilters, applyModifiers, selectColumns } from './query-engine';
 import { parseSelect } from '../../relational/select-parser';
 import { SchemaRegistry } from '../../relational/schema-registry';
 import { RelationIndex, resolveRelations } from './relation-resolver';
-import { MockAuthAdapter } from './auth';
+import { MockAuthAdapter, type MockAuthOptions, type MockSessionStorage } from './auth';
 import { MockStorageAdapter } from './storage';
 import { MockRealtimeAdapter } from './realtime';
+
+export interface MockAdapterOptions {
+  /** Enable session persistence across page refreshes / app restarts. Default: true (matches Supabase) */
+  persistSession?: boolean;
+  /** Custom storage backend for session persistence. Defaults to localStorage on web. For React Native, pass AsyncStorage. */
+  storage?: MockSessionStorage;
+}
 
 export class MockAdapter implements DatabaseAdapter {
   private tables: Map<string, Record<string, any>[]> = new Map();
@@ -18,10 +25,17 @@ export class MockAdapter implements DatabaseAdapter {
   private schemaRegistry: SchemaRegistry = new SchemaRegistry();
   private relationIndex: RelationIndex = new RelationIndex();
 
-  auth = new MockAuthAdapter();
+  auth: MockAuthAdapter;
   storage = new MockStorageAdapter();
   realtime = new MockRealtimeAdapter();
   functions = new MockFunctionsAdapter();
+
+  constructor(options?: MockAdapterOptions) {
+    this.auth = new MockAuthAdapter({
+      persistSession: options?.persistSession,
+      storage: options?.storage,
+    });
+  }
 
   /** Seed a table with initial data */
   seed(table: string, data: Record<string, any>[]) {
@@ -30,9 +44,27 @@ export class MockAdapter implements DatabaseAdapter {
   }
 
   /** Seed auth users without setting session or firing listeners */
-  seedUsers(users: Array<{ email: string; password: string; id?: string; user_metadata?: Record<string, any> }>) {
+  seedUsers(users: Array<{ email: string; password: string; id?: string; user_metadata?: Record<string, any>; [key: string]: any }>) {
     for (const u of users) {
-      this.auth.seedUser(u.email, u.password, { id: u.id, user_metadata: u.user_metadata });
+      const authUser = this.auth.seedUser(u.email, u.password, { id: u.id, user_metadata: u.user_metadata });
+      // Collect extra fields (everything except auth-only fields)
+      const { password: _, email: __, id: ___, user_metadata: ____, ...extra } = u;
+      const rowData = {
+        ...extra,
+        id: authUser.id,
+        email: authUser.email,
+        user_metadata: authUser.user_metadata,
+        created_at: authUser.created_at,
+      };
+      // Also seed into the "users" table so from('users').select() works
+      const table = this.getTable('users');
+      const existing = table.find(row => row.id === authUser.id);
+      if (existing) {
+        // seedUsers data overrides matching seed row fields
+        Object.assign(existing, rowData);
+      } else {
+        table.push(rowData);
+      }
     }
     return this;
   }
@@ -70,7 +102,7 @@ export class MockAdapter implements DatabaseAdapter {
     this.realtime.reset();
   }
 
-  private getTable(name: string): Record<string, any>[] {
+  getTable(name: string): Record<string, any>[] {
     if (!this.tables.has(name)) {
       this.tables.set(name, []);
     }
@@ -353,6 +385,6 @@ class MockFunctionsAdapter {
   }
 }
 
-export { MockAuthAdapter } from './auth';
+export { MockAuthAdapter, type MockAuthOptions, type MockSessionStorage } from './auth';
 export { MockStorageAdapter } from './storage';
 export { MockRealtimeAdapter } from './realtime';

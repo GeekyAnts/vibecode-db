@@ -40,6 +40,7 @@ export type {
   RealtimePayload,
   RealtimeCallback,
   ClientOptions,
+  ClientConfig,
 } from './types';
 
 export type {

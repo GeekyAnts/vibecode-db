@@ -1,21 +1,33 @@
 import type { AuthAdapter } from '../adapters/types';
+import type { ClientConfig } from '../types';
 
 export class AuthClient {
   private adapter: AuthAdapter;
+  private config: ClientConfig;
 
-  constructor(adapter: AuthAdapter) {
+  constructor(adapter: AuthAdapter, config?: ClientConfig) {
     this.adapter = adapter;
+    this.config = config || {};
   }
 
-  signUp(credentials: { email?: string; phone?: string; password: string }) {
+  signUp(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
+    if (this.config.authDisabled && !options?.overrideAuthDisabled) {
+      return Promise.resolve({ data: { user: null, session: null }, error: { message: 'Auth is disabled', reason: 'auth_disabled' } });
+    }
     return this.adapter.signUp(credentials);
   }
 
-  signInWithPassword(credentials: { email?: string; phone?: string; password: string }) {
+  signInWithPassword(credentials: { email?: string; phone?: string; password: string }, options?: { overrideAuthDisabled?: boolean }) {
+    if (this.config.authDisabled && !options?.overrideAuthDisabled) {
+      return Promise.resolve({ data: { user: null, session: null }, error: { message: 'Auth is disabled', reason: 'auth_disabled' } });
+    }
     return this.adapter.signInWithPassword(credentials);
   }
 
-  signOut() {
+  signOut(options?: { overrideAuthDisabled?: boolean }) {
+    if (this.config.authDisabled && !options?.overrideAuthDisabled) {
+      return Promise.resolve({ error: { message: 'Auth is disabled', reason: 'auth_disabled' } });
+    }
     return this.adapter.signOut();
   }
 

@@ -16,10 +16,67 @@ function createSession(user: AuthUser): AuthSession {
   };
 }
 
+// ─── Session Storage ────────────────────────────────────────────────
+
+const SESSION_KEY = 'vibecode-mock-session';
+
+export interface MockSessionStorage {
+  getItem(key: string): string | null | Promise<string | null>;
+  setItem(key: string, value: string): void | Promise<void>;
+  removeItem(key: string): void | Promise<void>;
+}
+
+/** Web: uses localStorage (matches Supabase default) */
+function getDefaultStorage(): MockSessionStorage | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage;
+    }
+  } catch {}
+  return null;
+}
+
+export interface MockAuthOptions {
+  /** Enable session persistence across page refreshes / app restarts. Default: true (matches Supabase) */
+  persistSession?: boolean;
+  /** Custom storage backend. Defaults to localStorage on web. For React Native, pass AsyncStorage. */
+  storage?: MockSessionStorage;
+}
+
 export class MockAuthAdapter implements AuthAdapter {
   private users: Map<string, { user: AuthUser; password: string }> = new Map();
-  private currentSession: AuthSession | null = null;
+  currentSession: AuthSession | null = null;
   private listeners: Array<(event: string, session: AuthSession | null) => void> = [];
+  private persistSession: boolean;
+  private storage: MockSessionStorage | null;
+
+  constructor(options?: MockAuthOptions) {
+    this.persistSession = options?.persistSession ?? true;
+    this.storage = this.persistSession
+      ? (options?.storage ?? getDefaultStorage())
+      : null;
+  }
+
+  private async saveSession(session: AuthSession | null) {
+    if (!this.storage) return;
+    try {
+      if (session) {
+        await this.storage.setItem(SESSION_KEY, JSON.stringify(session));
+      } else {
+        await this.storage.removeItem(SESSION_KEY);
+      }
+    } catch {}
+  }
+
+  private async loadSession(): Promise<AuthSession | null> {
+    if (!this.storage) return null;
+    try {
+      const raw = await this.storage.getItem(SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
 
   async signUp(credentials: { email?: string; phone?: string; password: string }) {
     const key = credentials.email || credentials.phone;
@@ -43,6 +100,7 @@ export class MockAuthAdapter implements AuthAdapter {
     this.users.set(key, { user, password: credentials.password });
     const session = createSession(user);
     this.currentSession = session;
+    await this.saveSession(session);
     this.notifyListeners('SIGNED_IN', session);
 
     return { data: { user, session }, error: null };
@@ -61,6 +119,7 @@ export class MockAuthAdapter implements AuthAdapter {
 
     const session = createSession(entry.user);
     this.currentSession = session;
+    await this.saveSession(session);
     this.notifyListeners('SIGNED_IN', session);
 
     return { data: { user: entry.user, session }, error: null };
@@ -68,6 +127,7 @@ export class MockAuthAdapter implements AuthAdapter {
 
   async signOut() {
     this.currentSession = null;
+    await this.saveSession(null);
     this.notifyListeners('SIGNED_OUT', null);
     return { error: null };
   }
@@ -80,6 +140,10 @@ export class MockAuthAdapter implements AuthAdapter {
   }
 
   async getSession() {
+    // Restore from storage if no in-memory session
+    if (!this.currentSession && this.storage) {
+      this.currentSession = await this.loadSession();
+    }
     return { data: { session: this.currentSession }, error: null };
   }
 
@@ -121,6 +185,7 @@ export class MockAuthAdapter implements AuthAdapter {
       }
     }
 
+    await this.saveSession(this.currentSession);
     return { data: { user, session: this.currentSession }, error: null };
   }
 
@@ -152,5 +217,8 @@ export class MockAuthAdapter implements AuthAdapter {
     this.users.clear();
     this.currentSession = null;
     this.listeners = [];
+    if (this.storage) {
+      this.saveSession(null);
+    }
   }
 }

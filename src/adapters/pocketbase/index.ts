@@ -4,6 +4,23 @@ import type { RelationNode } from '../../relational/types';
 import { translateFilters } from './filter-translator';
 import { parseSelect } from '../../relational/select-parser';
 
+/**
+ * Extract a detailed error message from a PocketBase ClientResponseError.
+ * PB errors carry `response.data` with per-field validation details that
+ * the generic `message` property omits.
+ */
+function extractPbError(err: any): { message: string } {
+  const base = err?.message ?? 'Unknown error';
+  const data = err?.response?.data ?? err?.data;
+  if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+    const details = Object.entries(data)
+      .map(([field, info]: [string, any]) => `${field}: ${info?.message ?? JSON.stringify(info)}`)
+      .join('; ');
+    return { message: `${base} (${details})` };
+  }
+  return { message: base };
+}
+
 export interface PocketBaseAdapterOptions {
   url: string;
   client?: any;
@@ -76,7 +93,7 @@ export class PocketBaseAdapter implements DatabaseAdapter {
           return { data: null, error: { message: `Unknown operation: ${descriptor.operation}` }, status: 400, statusText: 'Bad Request' };
       }
     } catch (err: any) {
-      return { data: null, error: { message: err.message }, status: err.status ?? 500, statusText: 'Error' };
+      return { data: null, error: extractPbError(err), status: err.status ?? 500, statusText: 'Error' };
     }
   }
 
@@ -359,7 +376,7 @@ class PocketBaseLazyAuthAdapter implements AuthAdapter {
         error: null,
       };
     } catch (err: any) {
-      return { data: { user: null, session: null }, error: { message: err.message } };
+      return { data: { user: null, session: null }, error: extractPbError(err) };
     }
   }
 
@@ -375,7 +392,7 @@ class PocketBaseLazyAuthAdapter implements AuthAdapter {
         error: null,
       };
     } catch (err: any) {
-      return { data: { user: null, session: null }, error: { message: err.message } };
+      return { data: { user: null, session: null }, error: extractPbError(err) };
     }
   }
 
@@ -436,7 +453,7 @@ class PocketBaseLazyAuthAdapter implements AuthAdapter {
         error: null,
       };
     } catch (err: any) {
-      return { data: { user: null, session: null }, error: { message: err.message } };
+      return { data: { user: null, session: null }, error: extractPbError(err) };
     }
   }
 
@@ -446,7 +463,7 @@ class PocketBaseLazyAuthAdapter implements AuthAdapter {
       await this.pb.collection('users').requestPasswordReset(email);
       return { data: {}, error: null };
     } catch (err: any) {
-      return { data: {}, error: { message: err.message } };
+      return { data: {}, error: extractPbError(err) };
     }
   }
 }
@@ -498,7 +515,7 @@ class PocketBaseLazyStorageAdapter implements StorageAdapter {
       }
       return { data: { message: `Collection '${id}' emptied` }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -537,7 +554,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
       const storedPath = `${record.id}/${record.file}`;
       return { data: { path: storedPath }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -556,7 +573,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
       const blob = await res.blob();
       return { data: blob, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -589,7 +606,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
       }
       return { data: files, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -610,7 +627,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
       }
       return { data: removed, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -639,7 +656,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
 
       return { data: { message: `Moved to ${upData?.path}` }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 
@@ -656,7 +673,7 @@ class PocketBaseFileAdapter implements StorageFileAdapter {
 
       return { data: { path: upData?.path || toPath }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      return { data: null, error: extractPbError(err) };
     }
   }
 }
